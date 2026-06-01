@@ -6,6 +6,7 @@
 <title>Fitness Tracker</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.4/umd/index.min.js"></script>
 <style>
   :root {
     --accent: #1D9E75;
@@ -139,6 +140,58 @@
   }
   .save-indicator { font-size: 11px; color: var(--accent); display: inline-flex; align-items: center; gap: 4px; opacity: 0; transition: opacity 0.3s; }
   .save-indicator.visible { opacity: 1; }
+  .mode-btn { padding: 8px 14px; font-size: 13px; font-weight: 500; border: 0.5px solid var(--border2); border-radius: var(--radius-md); background: var(--surface); cursor: pointer; color: var(--text2); display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; }
+  .mode-btn:hover { background: var(--surface2); color: var(--text); }
+  .mode-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent-dark); }
+  .ex-history-item { border-bottom: 0.5px solid var(--border); }
+  .ex-history-item:last-child { border-bottom: none; }
+  .ex-history-toggle { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text); user-select: none; }
+  .ex-history-toggle:hover { color: var(--accent-dark); }
+  .ex-history-toggle i.arrow { font-size: 14px; color: var(--text3); transition: transform 0.2s; }
+  .ex-history-toggle.open i.arrow { transform: rotate(180deg); }
+  .ex-history-toggle .arrow { display:inline-block; transition: transform 0.2s; }
+  .ex-history-toggle.open .arrow { transform: rotate(180deg); }
+  .ex-history-body { display: none; padding-bottom: 10px; }
+  .ex-history-body.open { display: block; }
+  .week-row { display: grid; grid-template-columns: 60px 70px 1fr 90px; gap: 8px; padding: 5px 0; font-size: 12px; align-items: center; border-bottom: 0.5px solid var(--border); }
+  .week-row:last-child { border-bottom: none; }
+  .week-row .wk { color: var(--text3); font-weight: 600; }
+  .week-row .wt { color: var(--text); font-weight: 600; }
+  .week-row .wt.pr { color: var(--amber); }
+  .week-row .reps { color: var(--text2); }
+  .week-row .date { color: var(--text3); font-size: 11px; text-align: right; }
+  .week-row-header { display: grid; grid-template-columns: 60px 70px 1fr 90px; gap: 8px; padding: 4px 0 6px; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 0.5px solid var(--border); margin-bottom: 2px; }
+  .full-history-entry { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 10px; }
+  .full-history-entry .fh-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
+  .full-history-entry .fh-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .full-history-entry .fh-meta { font-size: 12px; color: var(--text3); text-align: right; white-space: nowrap; }
+  .full-history-entry .fh-exercises { font-size: 12px; color: var(--text2); line-height: 2; }
+  .intensity-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .intensity-low { background: var(--blue-light); color: var(--blue); }
+  .intensity-moderate { background: var(--amber-light); color: var(--amber); }
+  .intensity-high { background: var(--coral-light); color: var(--coral); }
+  .intensity-max { background: var(--purple-light); color: var(--purple); }
+  .chart-tab-btn { padding: 6px 12px; font-size: 12px; font-weight: 500; border: 0.5px solid var(--border2); border-radius: 20px; background: var(--surface); cursor: pointer; color: var(--text2); transition: all 0.15s; }
+  .chart-tab-btn:hover { background: var(--surface2); color: var(--text); }
+  .chart-tab-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent-dark); }
+  .pr-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:0.5px solid var(--border); font-size:13px; }
+  .pr-row:last-child { border-bottom:none; }
+  .pr-row .pr-name { color:var(--text2); flex:1; }
+  .pr-row .pr-val { font-weight:600; color:var(--amber); }
+  .pr-row .pr-date { font-size:11px; color:var(--text3); margin-left:10px; }
+  .wk-summary-row { display:grid; grid-template-columns:70px 1fr auto; gap:8px; align-items:center; padding:8px 0; border-bottom:0.5px solid var(--border); font-size:13px; }
+  .wk-summary-row:last-child { border-bottom:none; }
+  .wk-summary-dots { display:flex; gap:4px; }
+  .wk-dot { width:10px; height:10px; border-radius:50%; }
+  .cal-cell { border-radius:6px; padding:4px 2px; min-height:46px; cursor:pointer; position:relative; display:flex; flex-direction:column; align-items:center; transition: background 0.1s; }
+  .cal-cell:hover { background: var(--surface2); }
+  .cal-cell.today .cal-num { background: var(--accent); color: white; border-radius: 50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; }
+  .cal-cell.selected { outline: 2px solid var(--accent); outline-offset: -1px; border-radius: 6px; }
+  .cal-cell.empty { cursor: default; }
+  .cal-cell.empty:hover { background: none; }
+  .cal-num { font-size: 12px; font-weight: 500; color: var(--text2); width:20px; height:20px; display:flex; align-items:center; justify-content:center; margin-bottom:2px; }
+  .cal-dots { display:flex; flex-wrap:wrap; gap:2px; justify-content:center; max-width:36px; }
+  .cal-dot { width:7px; height:7px; border-radius:2px; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -149,24 +202,60 @@
   </header>
 
   <div class="nav">
-    <button class="active" onclick="switchTab('dashboard', this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
-    <button onclick="switchTab('workout', this)"><i class="ti ti-barbell"></i> Workout</button>
-    <button onclick="switchTab('diet', this)"><i class="ti ti-salad"></i> Diet</button>
-    <button onclick="switchTab('macros', this)"><i class="ti ti-calculator"></i> Macros</button>
-    <button onclick="switchTab('progress', this)"><i class="ti ti-chart-line"></i> Progress</button>
-    <button onclick="switchTab('profile', this)"><i class="ti ti-user"></i> Profile</button>
+    <button class="active" onclick="switchTab('dashboard', this)">◈ Dashboard</button>
+    <button onclick="switchTab('workout', this)">🏋 Workout</button>
+    <button onclick="switchTab('diet', this)">🥗 Diet</button>
+    <button onclick="switchTab('macros', this)">⊕ Macros</button>
+    <button onclick="switchTab('progress', this)">↗ Progress</button>
+    <button onclick="switchTab('profile', this)">◎ Profile</button>
   </div>
 
   <!-- DASHBOARD -->
   <div id="tab-dashboard" class="section active">
     <div class="stat-grid">
-      <div class="stat-card"><div class="label">Calories today</div><div class="value" id="d-kcal">0</div><div class="unit">/ <span id="d-kcal-t">2200</span> kcal</div></div>
+      <div class="stat-card"><div class="label">Calories eaten</div><div class="value" id="d-kcal">0</div><div class="unit">/ <span id="d-kcal-t">2200</span> kcal</div></div>
+      <div class="stat-card"><div class="label">Calories burned</div><div class="value" id="d-burned" style="color:var(--coral);">0</div><div class="unit">from exercise</div></div>
+      <div class="stat-card"><div class="label">Net calories</div><div class="value" id="d-net">0</div><div class="unit">goal: <span id="d-net-goal">—</span></div></div>
       <div class="stat-card"><div class="label">Protein today</div><div class="value" id="d-prot">0</div><div class="unit">/ <span id="d-prot-t">160</span> g</div></div>
-      <div class="stat-card"><div class="label">Workouts this week</div><div class="value" id="d-wk-count">0</div><div class="unit">sessions</div></div>
-      <div class="stat-card"><div class="label">Current weight</div><div class="value" id="d-wt">—</div><div class="unit">kg</div></div>
     </div>
+
+    <!-- Energy balance bar -->
+    <div class="card" id="energy-balance-card">
+      <h3><i class="ti ti-flame"></i> Today's energy balance</h3>
+      <div id="energy-balance-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;text-align:center;">
+          <div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.04em;">Eaten</div>
+            <div style="font-size:20px;font-weight:600;color:var(--text);" id="eb-eaten">0</div>
+            <div style="font-size:11px;color:var(--text3);">kcal</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.04em;">Burned</div>
+            <div style="font-size:20px;font-weight:600;color:var(--coral);" id="eb-burned">0</div>
+            <div style="font-size:11px;color:var(--text3);">kcal</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.04em;">Net</div>
+            <div style="font-size:20px;font-weight:600;" id="eb-net" style="color:var(--text);">0</div>
+            <div style="font-size:11px;color:var(--text3);">kcal</div>
+          </div>
+        </div>
+        <!-- Visual balance bar -->
+        <div style="margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px;">
+            <span>Net vs target (<span id="eb-target-label">2200</span> kcal)</span>
+            <span id="eb-status-label"></span>
+          </div>
+          <div style="height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;position:relative;">
+            <div id="eb-bar-fill" style="height:100%;border-radius:5px;transition:width 0.4s ease;max-width:100%;"></div>
+          </div>
+        </div>
+        <div id="eb-message" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+      </div>
+    </div>
+
     <div class="card">
-      <h3><i class="ti ti-target"></i> Macro progress today</h3>
+      <h3><i class="ti ti-target"></i> Macros today</h3>
       <div class="macro-bar-wrap"><div class="macro-bar-label"><span class="mname">Calories</span><span class="mval" id="db-kcal-lbl">0 / 2200 kcal</span></div><div class="macro-bar"><div class="macro-bar-fill" id="db-kcal-bar" style="width:0%;background:var(--accent);"></div></div></div>
       <div class="macro-bar-wrap"><div class="macro-bar-label"><span class="mname">Protein</span><span class="mval" id="db-prot-lbl">0 / 160 g</span></div><div class="macro-bar"><div class="macro-bar-fill" id="db-prot-bar" style="width:0%;background:var(--coral);"></div></div></div>
       <div class="macro-bar-wrap"><div class="macro-bar-label"><span class="mname">Carbs</span><span class="mval" id="db-carb-lbl">0 / 220 g</span></div><div class="macro-bar"><div class="macro-bar-fill" id="db-carb-bar" style="width:0%;background:var(--amber);"></div></div></div>
@@ -184,70 +273,322 @@
 
   <!-- WORKOUT -->
   <div id="tab-workout" class="section">
-    <div class="card">
-      <h3><i class="ti ti-calendar"></i> Select workout day</h3>
-      <div id="day-buttons">
-        <button class="day-btn selected" onclick="selectDay(0)"><span class="badge badge-coral">Push</span> Day 1 — Upper (Push)</button>
-        <button class="day-btn" onclick="selectDay(1)"><span class="badge badge-amber">Quads</span> Day 2 — Lower (Quads)</button>
-        <button class="day-btn" onclick="selectDay(2)"><span class="badge badge-blue">Pull</span> Day 3 — Upper (Pull)</button>
-        <button class="day-btn" onclick="selectDay(3)"><span class="badge badge-purple">Glutes</span> Day 4 — Lower (Glutes)</button>
+
+    <!-- Mode toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="mode-btn active" id="mode-program" onclick="setWorkoutMode('program')">🏋 Weight program</button>
+      <button class="mode-btn" id="mode-custom" onclick="setWorkoutMode('custom')">⚡ Custom activity</button>
+      <button class="mode-btn" id="mode-history" onclick="setWorkoutMode('history')">◷ Full history</button>
+    </div>
+
+    <!-- PROGRAM MODE -->
+    <div id="workout-program-mode">
+      <div class="card">
+        <h3><i class="ti ti-calendar"></i> Select workout day</h3>
+        <div id="day-buttons">
+          <button class="day-btn selected" onclick="selectDay(0)"><span class="badge badge-coral">Push</span> Day 1 — Upper (Push)</button>
+          <button class="day-btn" onclick="selectDay(1)"><span class="badge badge-amber">Quads</span> Day 2 — Lower (Quads)</button>
+          <button class="day-btn" onclick="selectDay(2)"><span class="badge badge-blue">Pull</span> Day 3 — Upper (Pull)</button>
+          <button class="day-btn" onclick="selectDay(3)"><span class="badge badge-purple">Glutes</span> Day 4 — Lower (Glutes)</button>
+        </div>
+      </div>
+      <div class="card" id="exercise-card">
+        <h3 id="exercise-card-title"><i class="ti ti-barbell"></i> Day 1 — Upper Body (Push)</h3>
+        <div class="exercise-header"><span>Exercise</span><span>Sets</span><span>Target</span><span>Weight (kg)</span><span>Reps done</span></div>
+        <div id="last-session-hint" style="font-size:12px;color:var(--text3);margin:6px 0 10px;font-style:italic;"></div>
+        <div id="exercise-list"></div>
+
+        <!-- Calorie burn section -->
+        <div style="margin-top:16px;padding-top:14px;border-top:0.5px solid var(--border);">
+          <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;">Session details</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div class="form-group">
+              <label>Duration (mins)</label>
+              <input type="number" id="session-duration" placeholder="e.g. 55" min="1" oninput="estimateCalories()">
+            </div>
+            <div class="form-group">
+              <label>Calories burned</label>
+              <div style="position:relative;">
+                <input type="number" id="session-kcal-burned" placeholder="auto-estimated" min="0" style="width:100%;padding-right:32px;" oninput="onKcalBurnedInput()">
+                <span id="kcal-auto-badge" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:600;color:var(--accent-dark);background:var(--accent-light);padding:2px 5px;border-radius:4px;">est</span>
+              </div>
+            </div>
+          </div>
+          <div id="session-burn-preview" style="display:none;background:var(--surface2);border-radius:var(--radius-md);padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:12px;"></div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-primary" onclick="logWorkout()">💾 Save workout</button>
+          <button class="btn-secondary" onclick="renderExercises()">↺ Reset</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3><i class="ti ti-chart-dots"></i> Exercise history — <span id="history-day-label" style="font-weight:400;color:var(--text3);">Day 1</span></h3>
+        <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">Click any exercise to see your weight &amp; reps across all weeks.</p>
+        <div id="exercise-history-list"></div>
       </div>
     </div>
-    <div class="week-nav">
-      <button onclick="changeWeek(-1)"><i class="ti ti-chevron-left"></i></button>
-      <div class="wk-label" id="week-label">Week 1</div>
-      <button onclick="changeWeek(1)"><i class="ti ti-chevron-right"></i></button>
-    </div>
-    <div class="card" id="exercise-card">
-      <h3 id="exercise-card-title"><i class="ti ti-barbell"></i> Day 1 — Upper Body (Push)</h3>
-      <div class="exercise-header"><span>Exercise</span><span>Sets</span><span>Target</span><span>Weight (kg)</span><span>Reps done</span></div>
-      <div id="exercise-list"></div>
-      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
-        <button class="btn-primary" onclick="logWorkout()"><i class="ti ti-device-floppy"></i> Save workout</button>
-        <button class="btn-secondary" onclick="renderExercises()"><i class="ti ti-refresh"></i> Reset</button>
+
+    <!-- CUSTOM ACTIVITY MODE -->
+    <div id="workout-custom-mode" style="display:none;">
+      <div class="card">
+        <h3><i class="ti ti-run"></i> Log a custom activity</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Activity type</label>
+            <select id="custom-type" onchange="toggleCustomType()">
+              <option value="boxing">Boxing</option>
+              <option value="football">Football</option>
+              <option value="inclinewalk">Incline walk</option>
+              <option value="running">Running</option>
+              <option value="cycling">Cycling</option>
+              <option value="swimming">Swimming</option>
+              <option value="yoga">Yoga</option>
+              <option value="hiit">HIIT</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group" id="custom-other-wrap" style="display:none;">
+            <label>Activity name</label>
+            <input type="text" id="custom-other-name" placeholder="e.g. Tennis, Padel...">
+          </div>
+        </div>
+        <div class="form-row" id="incline-row" style="display:none;">
+          <div class="form-group">
+            <label>Incline / gradient (%)</label>
+            <input type="number" id="custom-incline" placeholder="e.g. 12" min="0" max="40">
+          </div>
+          <div class="form-group">
+            <label>Speed (km/h)</label>
+            <input type="number" id="custom-speed" placeholder="e.g. 5.5" min="0" step="0.5">
+          </div>
+        </div>
+        <div class="form-row three">
+          <div class="form-group">
+            <label>Duration (mins)</label>
+            <input type="number" id="custom-duration" placeholder="60" min="1">
+          </div>
+          <div class="form-group">
+            <label>Intensity</label>
+            <select id="custom-intensity">
+              <option value="low">Low</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="high">High</option>
+              <option value="max">Max effort</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Calories burned <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+            <input type="number" id="custom-kcal" placeholder="400" min="0">
+          </div>
+        </div>
+        <div class="form-row one">
+          <div class="form-group">
+            <label>Notes <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+            <input type="text" id="custom-notes" placeholder="e.g. 5-a-side, 3x3 min rounds, morning run in the park...">
+          </div>
+        </div>
+        <button class="btn-primary" onclick="logCustomWorkout()">💾 Save activity</button>
+      </div>
+      <div class="card">
+        <h3><i class="ti ti-history"></i> Custom activity log</h3>
+        <div id="custom-workout-history" class="empty">No custom activities logged yet.</div>
       </div>
     </div>
-    <div class="card">
-      <h3><i class="ti ti-history"></i> Workout log</h3>
-      <div id="workout-history" class="empty">No workouts saved yet.</div>
+
+    <!-- FULL HISTORY MODE -->
+    <div id="workout-history-mode" style="display:none;">
+
+      <!-- Calendar -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <h3 style="margin-bottom:0;"><i class="ti ti-calendar-month"></i> Calendar</h3>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="calPrevMonth()" style="border:0.5px solid var(--border2);background:var(--surface);border-radius:var(--radius-md);padding:5px 12px;cursor:pointer;color:var(--text);font-size:15px;line-height:1;">‹</button>
+            <span id="cal-month-label" style="font-size:14px;font-weight:600;min-width:110px;text-align:center;color:var(--text);"></span>
+            <button onclick="calNextMonth()" style="border:0.5px solid var(--border2);background:var(--surface);border-radius:var(--radius-md);padding:5px 12px;cursor:pointer;color:var(--text);font-size:15px;line-height:1;">›</button>
+          </div>
+        </div>
+        <!-- Legend -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:12px;height:12px;border-radius:3px;background:#D85A30;flex-shrink:0;"></div>Push</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:12px;height:12px;border-radius:3px;background:#BA7517;flex-shrink:0;"></div>Quads</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:12px;height:12px;border-radius:3px;background:#185FA5;flex-shrink:0;"></div>Pull</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:12px;height:12px;border-radius:3px;background:#534AB7;flex-shrink:0;"></div>Glutes</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:12px;height:12px;border-radius:3px;background:#1D9E75;flex-shrink:0;"></div>Activity</div>
+        </div>
+        <!-- Day-of-week headers -->
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;">
+          <div style="text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:2px 0;">M</div>
+          <div style="text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:2px 0;">T</div>
+          <div style="text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:2px 0;">W</div>
+          <div style="text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:2px 0;">T</div>
+          <div style="text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:2px 0;">F</div>
+          <div style="text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:2px 0;">S</div>
+          <div style="text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:2px 0;">S</div>
+        </div>
+        <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+        <!-- Selected day detail -->
+        <div id="cal-day-detail" style="display:none;margin-top:14px;padding-top:12px;border-top:0.5px solid var(--border);"></div>
+      </div>
+
+      <!-- Filters + list -->
+      <div class="card">
+        <h3><i class="ti ti-adjustments-horizontal"></i> Filter log</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Type</label>
+            <select id="history-filter-type" onchange="renderFullHistory()">
+              <option value="all">All workouts</option>
+              <option value="program">Weight program only</option>
+              <option value="custom">Custom activities only</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Day</label>
+            <select id="history-filter-day" onchange="renderFullHistory()">
+              <option value="all">All days</option>
+              <option value="0">Day 1 — Push</option>
+              <option value="1">Day 2 — Quads</option>
+              <option value="2">Day 3 — Pull</option>
+              <option value="3">Day 4 — Glutes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="full-history-list"></div>
     </div>
+
   </div>
 
   <!-- DIET -->
   <div id="tab-diet" class="section">
-    <div class="card">
-      <h3><i class="ti ti-plus"></i> Log food</h3>
-      <div class="form-row one"><div class="form-group"><label>Food name</label><input type="text" id="food-name" placeholder="e.g. Chicken breast 200g, Oats 80g"></div></div>
-      <div class="form-row three">
-        <div class="form-group"><label>Calories (kcal)</label><input type="number" id="food-kcal" placeholder="250" min="0"></div>
-        <div class="form-group"><label>Protein (g)</label><input type="number" id="food-protein" placeholder="30" min="0"></div>
-        <div class="form-group"><label>Carbs (g)</label><input type="number" id="food-carbs" placeholder="20" min="0"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Fat (g)</label><input type="number" id="food-fat" placeholder="8" min="0"></div>
-        <div class="form-group"><label>Meal</label><select id="food-meal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select></div>
-      </div>
-      <button class="btn-primary" onclick="logFood()"><i class="ti ti-plus"></i> Add food</button>
+
+    <!-- Diet sub-nav -->
+    <div style="display:flex;gap:6px;margin-bottom:16px;">
+      <button class="mode-btn active" id="diet-mode-log" onclick="setDietMode('log')">+ Log food</button>
+      <button class="mode-btn" id="diet-mode-recipes" onclick="setDietMode('recipes')">📋 Recipes</button>
+      <button class="mode-btn" id="diet-mode-create" onclick="setDietMode('create')">✎ Create recipe</button>
     </div>
-    <div class="card">
-      <h3><i class="ti ti-list"></i> Today's food log</h3>
-      <div id="food-list"><div class="empty">Nothing logged yet.</div></div>
-      <div id="food-totals" style="display:none;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;">
-          <span>Total</span>
-          <div style="display:flex;gap:14px;">
-            <span id="tot-kcal">0 kcal</span>
-            <span style="color:var(--coral);" id="tot-prot">P: 0g</span>
-            <span style="color:var(--amber);" id="tot-carb">C: 0g</span>
-            <span style="color:var(--blue);" id="tot-fat">F: 0g</span>
+
+    <!-- LOG FOOD MODE -->
+    <div id="diet-log-mode">
+      <div class="card">
+        <h3><i class="ti ti-plus"></i> Log food</h3>
+
+        <!-- Food search -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">Search food database</div>
+          <div style="position:relative;">
+            <input type="text" id="food-search" placeholder="e.g. apple, cup of tea, chicken breast…" autocomplete="off"
+              style="width:100%;padding:9px 36px 9px 10px;border:0.5px solid var(--border2);border-radius:var(--radius-md);font-size:14px;background:var(--surface);color:var(--text);"
+              oninput="debounceSearch(this.value,'log')" onkeydown="handleSearchKey(event,'log')">
+            <span id="food-search-spinner" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text3);">⟳</span>
+          </div>
+          <div id="food-search-results" style="display:none;border:0.5px solid var(--border2);border-radius:var(--radius-md);margin-top:3px;background:var(--surface);max-height:260px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:100;position:relative;"></div>
+        </div>
+
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">Or enter manually</div>
+        <div class="form-row one"><div class="form-group"><label>Food name</label><input type="text" id="food-name" placeholder="e.g. Chicken breast 200g, Oats 80g"></div></div>
+        <div class="form-row three">
+          <div class="form-group"><label>Calories (kcal)</label><input type="number" id="food-kcal" placeholder="250" min="0"></div>
+          <div class="form-group"><label>Protein (g)</label><input type="number" id="food-protein" placeholder="30" min="0"></div>
+          <div class="form-group"><label>Carbs (g)</label><input type="number" id="food-carbs" placeholder="20" min="0"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Fat (g)</label><input type="number" id="food-fat" placeholder="8" min="0"></div>
+          <div class="form-group"><label>Meal</label><select id="food-meal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-primary" onclick="logFood()">+ Add food</button>
+          <button class="btn-secondary" onclick="openScanner('log')">📷 Scan barcode</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3><i class="ti ti-list"></i> Today's food log</h3>
+        <div id="food-list"><div class="empty">Nothing logged yet.</div></div>
+        <div id="food-totals" style="display:none;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;">
+            <span>Total</span>
+            <div style="display:flex;gap:14px;">
+              <span id="tot-kcal">0 kcal</span>
+              <span style="color:var(--coral);" id="tot-prot">P: 0g</span>
+              <span style="color:var(--amber);" id="tot-carb">C: 0g</span>
+              <span style="color:var(--blue);" id="tot-fat">F: 0g</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="card">
-      <h3><i class="ti ti-history"></i> Past food logs</h3>
-      <div id="past-food-log" class="empty">Food is only saved for today. Use the Progress tab for history.</div>
+
+    <!-- RECIPES MODE -->
+    <div id="diet-recipes-mode" style="display:none;">
+      <div class="card">
+        <h3>📋 My recipes</h3>
+        <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">Tap a recipe to log it instantly. All items in the recipe are added to today's food log.</p>
+        <div id="recipes-list"><div class="empty">No recipes yet. Create one using the "Create recipe" tab.</div></div>
+      </div>
     </div>
+
+    <!-- CREATE RECIPE MODE -->
+    <div id="diet-create-mode" style="display:none;">
+      <div class="card">
+        <h3>✎ Create a recipe</h3>
+        <div class="form-row one">
+          <div class="form-group"><label>Recipe name</label><input type="text" id="recipe-name" placeholder="e.g. Post-workout shake, Chicken & rice"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Default meal</label>
+            <select id="recipe-meal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select>
+          </div>
+        </div>
+        <!-- ingredient builder -->
+        <div style="font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin:12px 0 8px;">Ingredients</div>
+        <div id="recipe-ingredients-list"></div>
+        <div style="background:var(--surface2);border-radius:var(--radius-md);padding:12px;margin-top:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text3);margin-bottom:8px;">Add ingredient</div>
+          <!-- Recipe ingredient search -->
+          <div style="margin-bottom:10px;">
+            <div style="position:relative;">
+              <input type="text" id="ri-search" placeholder="Search food database…" autocomplete="off"
+                style="width:100%;padding:8px 36px 8px 10px;border:0.5px solid var(--border2);border-radius:var(--radius-md);font-size:13px;background:var(--surface);color:var(--text);"
+                oninput="debounceSearch(this.value,'recipe')" onkeydown="handleSearchKey(event,'recipe')">
+              <span id="ri-search-spinner" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text3);">⟳</span>
+            </div>
+            <div id="ri-search-results" style="display:none;border:0.5px solid var(--border2);border-radius:var(--radius-md);margin-top:3px;background:var(--surface);max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.12);position:relative;z-index:100;"></div>
+          </div>
+          <div class="form-row one"><div class="form-group"><label>Name</label><input type="text" id="ri-name" placeholder="e.g. Oats 80g"></div></div>
+          <div class="form-row three">
+            <div class="form-group"><label>Kcal</label><input type="number" id="ri-kcal" placeholder="300" min="0"></div>
+            <div class="form-group"><label>Protein (g)</label><input type="number" id="ri-protein" placeholder="10" min="0"></div>
+            <div class="form-group"><label>Carbs (g)</label><input type="number" id="ri-carbs" placeholder="50" min="0"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Fat (g)</label><input type="number" id="ri-fat" placeholder="5" min="0"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-secondary" onclick="addRecipeIngredient()">+ Add ingredient</button>
+            <button class="btn-secondary" onclick="openScanner('recipe')">📷 Scan barcode</button>
+          </div>
+        </div>
+        <!-- recipe totals preview -->
+        <div id="recipe-totals-preview" style="display:none;margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-md);font-size:13px;">
+          <div style="font-weight:600;margin-bottom:4px;color:var(--text);">Recipe totals</div>
+          <div style="display:flex;gap:14px;font-size:12px;">
+            <span id="rp-kcal" style="font-weight:600;">0 kcal</span>
+            <span id="rp-prot" style="color:var(--coral);">P: 0g</span>
+            <span id="rp-carbs" style="color:var(--amber);">C: 0g</span>
+            <span id="rp-fat" style="color:var(--blue);">F: 0g</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+          <button class="btn-primary" onclick="saveRecipe()">💾 Save recipe</button>
+          <button class="btn-secondary" onclick="clearRecipeBuilder()">↺ Clear</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- MACROS CALCULATOR -->
@@ -288,31 +629,74 @@
         <div class="macro-target-card fat"><div class="m-label">Fat</div><div class="m-val" id="res-fat">—</div><div style="font-size:11px;color:var(--text3);">g / day</div></div>
       </div>
       <div id="macro-kcal-result" style="display:none;margin-top:10px;font-size:12px;color:var(--text3);line-height:1.5;"></div>
-      <button class="btn-primary" style="margin-top:14px;" onclick="applyMacroTargets()"><i class="ti ti-check"></i> Apply these targets</button>
+      <button class="btn-primary" style="margin-top:14px;" onclick="applyMacroTargets()">✓ Apply these targets</button>
     </div>
   </div>
 
   <!-- PROGRESS -->
   <div id="tab-progress" class="section">
+
+    <!-- Log body stats -->
     <div class="card">
-      <h3><i class="ti ti-ruler"></i> Log body stats</h3>
+      <h3>+ Log today's stats</h3>
       <div class="form-row three">
         <div class="form-group"><label>Weight (kg)</label><input type="number" id="stat-weight" placeholder="80.5" step="0.1"></div>
-        <div class="form-group"><label>Body fat % <span style="font-weight:400;text-transform:none;">(optional)</span></label><input type="number" id="stat-bf" placeholder="18" step="0.1"></div>
-        <div class="form-group"><label>Waist cm <span style="font-weight:400;text-transform:none;">(optional)</span></label><input type="number" id="stat-waist" placeholder="85"></div>
+        <div class="form-group"><label>Body fat % <span style="font-weight:400;text-transform:none;">(opt)</span></label><input type="number" id="stat-bf" placeholder="18" step="0.1"></div>
+        <div class="form-group"><label>Waist cm <span style="font-weight:400;text-transform:none;">(opt)</span></label><input type="number" id="stat-waist" placeholder="85"></div>
       </div>
-      <button class="btn-primary" onclick="logStats()"><i class="ti ti-plus"></i> Log today</button>
+      <button class="btn-primary" onclick="logStats()">+ Log today</button>
     </div>
+
+    <!-- Summary cards -->
     <div class="stat-grid" id="progress-summary"></div>
+
+    <!-- Chart tabs -->
     <div class="card">
-      <h3><i class="ti ti-chart-line"></i> Weight over time</h3>
-      <canvas id="weight-chart" height="200"></canvas>
-      <div id="no-chart-msg" class="empty" style="margin-top:8px;">Log at least 2 entries to see your chart.</div>
+      <h3><i class="ti ti-chart-line"></i> Charts</h3>
+      <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="chart-tab-btn active" id="ctab-weight" onclick="switchChartTab('weight')">Weight</button>
+        <button class="chart-tab-btn" id="ctab-workouts" onclick="switchChartTab('workouts')">Workouts / week</button>
+        <button class="chart-tab-btn" id="ctab-strength" onclick="switchChartTab('strength')">Strength PRs</button>
+      </div>
+      <div id="chart-weight-panel">
+        <canvas id="weight-chart" height="200"></canvas>
+        <div id="no-chart-msg" class="empty" style="margin-top:8px;">Log at least 2 weight entries to see this chart.</div>
+      </div>
+      <div id="chart-workouts-panel" style="display:none;">
+        <canvas id="workouts-chart" height="200"></canvas>
+        <div id="no-workouts-chart-msg" class="empty" style="display:none;margin-top:8px;">Log at least 2 weeks of workouts to see this chart.</div>
+      </div>
+      <div id="chart-strength-panel" style="display:none;">
+        <div class="form-row" style="margin-bottom:12px;">
+          <div class="form-group" style="grid-column:span 2;">
+            <label>Exercise</label>
+            <select id="strength-exercise-select" onchange="renderStrengthChart()"></select>
+          </div>
+        </div>
+        <canvas id="strength-chart" height="200"></canvas>
+        <div id="no-strength-chart-msg" class="empty" style="display:none;margin-top:8px;">No data yet for this exercise.</div>
+      </div>
     </div>
+
+    <!-- Weekly workout summary -->
+    <div class="card">
+      <h3><i class="ti ti-calendar-stats"></i> Weekly workout summary</h3>
+      <div id="weekly-workout-summary" class="empty">No workouts logged yet.</div>
+    </div>
+
+    <!-- Personal records -->
+    <div class="card">
+      <h3><i class="ti ti-trophy"></i> Personal records</h3>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">Best weight lifted per exercise across all sessions.</p>
+      <div id="pr-list" class="empty">No workouts logged yet.</div>
+    </div>
+
+    <!-- Body stat history -->
     <div class="card">
       <h3><i class="ti ti-list"></i> Body stat history</h3>
       <div id="stats-log" class="empty">No entries yet.</div>
     </div>
+
   </div>
 
   <!-- PROFILE -->
@@ -327,7 +711,7 @@
         <div class="form-group"><label>Program name</label><input type="text" id="s-program" placeholder="e.g. Weight Lifting Program"></div>
         <div class="form-group"><label>Goal weight (kg)</label><input type="number" id="s-goalweight" placeholder="75" step="0.1"></div>
       </div>
-      <button class="btn-primary" onclick="saveProfile()"><i class="ti ti-device-floppy"></i> Save profile</button>
+      <button class="btn-primary" onclick="saveProfile()">💾 Save profile</button>
     </div>
     <div class="card">
       <h3><i class="ti ti-target"></i> Macro targets <span style="font-size:12px;font-weight:400;color:var(--text3);">— or set via the Macros calculator</span></h3>
@@ -341,12 +725,37 @@
     <div class="card" style="border-color:#a32d2d40;">
       <h3 style="color:#a32d2d;"><i class="ti ti-trash"></i> Reset data</h3>
       <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Clear all saved data. This cannot be undone.</p>
-      <button class="btn-danger" onclick="clearAllData()"><i class="ti ti-trash"></i> Clear all data</button>
+      <button id="clear-all-btn" class="btn-danger" onclick="clearAllData()">🗑 Clear all data</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- BARCODE SCANNER MODAL -->
+<div id="scanner-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;flex-direction:column;align-items:center;justify-content:center;">
+  <div style="width:min(92vw,420px);background:var(--surface);border-radius:var(--radius-xl);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border);">
+      <span style="font-size:14px;font-weight:600;color:var(--text);">📷 Scan barcode</span>
+      <button onclick="closeScanner()" style="border:none;background:none;cursor:pointer;font-size:20px;color:var(--text2);line-height:1;padding:2px 6px;">✕</button>
+    </div>
+    <div style="position:relative;background:#000;aspect-ratio:1;">
+      <video id="scanner-video" style="width:100%;height:100%;object-fit:cover;" autoplay muted playsinline></video>
+      <!-- Viewfinder overlay -->
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="width:65%;aspect-ratio:1.6;border:2px solid var(--accent);border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,0.35);"></div>
+      </div>
+    </div>
+    <div style="padding:14px 16px;">
+      <div id="scanner-status" style="font-size:13px;color:var(--text3);text-align:center;min-height:18px;">Point your camera at a barcode</div>
+      <div id="scanner-result" style="display:none;margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-md);">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;" id="scanner-product-name"></div>
+        <div style="font-size:12px;color:var(--text3);" id="scanner-product-macros"></div>
+      </div>
+      <div id="scanner-actions" style="display:none;margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 const DAYS = [
@@ -390,13 +799,14 @@ function loadState() {
   } catch(e) {}
   return {
     currentDay: 0,
-    currentWeek: 1,
     targets: {kcal:2200, protein:160, carbs:220, fat:73},
     todayFoods: [],
     todayDate: todayStr(),
     workoutLogs: [],
+    customWorkouts: [],
     statLogs: [],
     activityLog: [],
+    recipes: [],
     profile: {name:'', startdate:'2025-10-11', program:'Weight Lifting Program', goalweight:''}
   };
 }
@@ -431,7 +841,7 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   if (btn) btn.classList.add('active');
-  if (tab === 'progress') renderWeightChart();
+  if (tab === 'progress') { renderWeightChart(); renderWorkoutsChart(); renderWeeklyWorkoutSummary(); renderPersonalRecords(); }
 }
 
 function switchTabByName(tab) {
@@ -441,82 +851,1082 @@ function switchTabByName(tab) {
   if (idx >= 0) switchTab(tab, btns[idx]);
 }
 
+// ─── WORKOUT MODE SWITCHING ───────────────────────────────
+function setWorkoutMode(mode) {
+  ['program','custom','history'].forEach(m => {
+    document.getElementById('workout-'+m+'-mode').style.display = m===mode ? 'block' : 'none';
+    document.getElementById('mode-'+m).classList.toggle('active', m===mode);
+  });
+  if (mode === 'history') { if (!calYear) initCalendar(); renderCalendar(); renderFullHistory(); }
+  if (mode === 'custom') renderCustomHistory();
+}
+
+function toggleCustomType() {
+  const v = document.getElementById('custom-type').value;
+  document.getElementById('custom-other-wrap').style.display = v === 'other' ? 'flex' : 'none';
+  document.getElementById('incline-row').style.display = v === 'inclinewalk' ? 'grid' : 'none';
+}
+
 // ─── WORKOUT ─────────────────────────────────────────────
+
+// Last weights from the uploaded spreadsheet (Week 11 — most recent logged)
+const EXCEL_BASELINE = [
+  // Day 1 — Push
+  ['20','12','16','8','BW'],
+  // Day 2 — Quads
+  ['24','10','14','20','BW'],
+  // Day 3 — Pull
+  ['25','28','8','20','12'],
+  // Day 4 — Glutes
+  ['24','28','20','24','BW']
+];
+
 function selectDay(idx) {
   state.currentDay = idx;
   saveState();
   document.querySelectorAll('.day-btn').forEach((b,i) => b.classList.toggle('selected', i===idx));
   renderExercises();
-}
-
-function changeWeek(d) {
-  state.currentWeek = Math.max(1, Math.min(20, state.currentWeek + d));
-  saveState();
-  document.getElementById('week-label').textContent = 'Week ' + state.currentWeek;
-  renderExercises();
+  renderExerciseHistory();
 }
 
 function renderExercises() {
   const day = DAYS[state.currentDay];
   document.getElementById('exercise-card-title').innerHTML = `<i class="ti ti-barbell"></i> ${day.name}`;
-  const prevLog = state.workoutLogs.find(l => l.day === state.currentDay && l.week === state.currentWeek);
+
+  // Most recent log for this day (by isoDate)
+  const lastLog = state.workoutLogs
+    .filter(l => l.day === state.currentDay)
+    .sort((a, b) => (b.isoDate || '') > (a.isoDate || '') ? 1 : -1)[0] || null;
+
   const list = document.getElementById('exercise-list');
+
+  // Show "last session" hint if available
+  const hint = document.getElementById('last-session-hint');
+  if (hint) {
+    hint.textContent = lastLog
+      ? `Suggested weights and rep targets from your last session on ${lastLog.date}.`
+      : `No previous session found — showing weights from your Excel programme as a starting point.`;
+  }
+
   list.innerHTML = day.exercises.map((ex, i) => {
-    const prev = prevLog?.exercises[i];
-    const wVal = prev ? prev.weight : '';
-    const rVal = prev ? prev.repsActual : '';
-    // Find personal record
-    const allLogsForExercise = state.workoutLogs
+    // Use last session value as placeholder; fall back to Excel baseline
+    const lastExercise = lastLog?.exercises[i];
+    const suggestedWeight = lastExercise?.weight ?? EXCEL_BASELINE[state.currentDay][i];
+    // If reps were logged last time, use them as the target; otherwise show programme range
+    const lastReps = lastExercise?.repsActual?.trim();
+    const targetReps = lastReps || ex.reps;
+
+    // PR across all logs
+    const allWeights = state.workoutLogs
       .filter(l => l.day === state.currentDay)
       .map(l => parseFloat(l.exercises[i]?.weight))
       .filter(v => !isNaN(v));
-    const pr = allLogsForExercise.length ? Math.max(...allLogsForExercise) : null;
-    const isPR = pr && prev && parseFloat(prev.weight) >= pr;
+    const pr = allWeights.length ? Math.max(...allWeights) : null;
+
     return `<div class="exercise-row">
-      <div class="ename">${ex.name}${isPR ? '<span class="pr-badge">PR</span>' : ''}</div>
+      <div class="ename">${ex.name}</div>
       <div class="emeta">${ex.sets}</div>
-      <div class="emeta">${ex.reps}</div>
-      <input type="text" id="w-${i}" value="${wVal}" placeholder="${ex.weight}" title="Weight in kg or BW">
-      <input type="text" id="r-${i}" value="${rVal}" placeholder="e.g. 10,9,8" title="Reps per set">
+      <div class="emeta" style="${lastReps ? 'color:var(--accent-dark);font-weight:600;' : ''}" title="${lastReps ? 'Your reps from last session' : 'Programme target'}">${targetReps}</div>
+      <input type="text" id="w-${i}" value="" placeholder="${suggestedWeight}" title="Leave blank to use suggested weight">
+      <input type="text" id="r-${i}" value="" placeholder="${lastReps || 'e.g. 10,9,8'}" title="Reps completed">
     </div>`;
   }).join('');
 }
 
+// MET-based calorie estimates per day type (moderate weight training)
+// MET values: upper push ~4.5, lower quads ~5.0, upper pull ~4.5, lower glutes ~5.0
+// Formula: kcal = MET * weight_kg * duration_hours (we default 75kg if no weight logged)
+const DAY_MET = [4.5, 5.0, 4.5, 5.0];
+const DAY_BURN_PER_MIN = [6.5, 7.2, 6.5, 7.2]; // approx kcal/min at moderate intensity ~75kg
+
+function estimateCalories() {
+  const duration = parseInt(document.getElementById('session-duration').value) || 0;
+  const manualField = document.getElementById('session-kcal-burned');
+  const badge = document.getElementById('kcal-auto-badge');
+  const preview = document.getElementById('session-burn-preview');
+
+  if (!duration) { preview.style.display='none'; badge.style.display='none'; return; }
+
+  // Use last logged body weight if available
+  const bodyWeight = state.statLogs[0]?.weight || 75;
+  const met = DAY_MET[state.currentDay];
+  const estimated = Math.round(met * bodyWeight * (duration / 60));
+
+  // Only auto-fill if user hasn't typed their own number
+  if (!manualField.dataset.userEdited) {
+    manualField.value = estimated;
+    badge.style.display = 'inline-block';
+  }
+
+  const actual = parseInt(manualField.value) || estimated;
+  preview.style.display = 'block';
+  preview.innerHTML = `<i class="ti ti-flame" style="color:var(--coral);vertical-align:-2px;"></i> <strong>${actual} kcal</strong> estimated burned · ${duration} min · based on ${bodyWeight}kg body weight`;
+}
+
+function onKcalBurnedInput() {
+  document.getElementById('session-kcal-burned').dataset.userEdited = '1';
+  document.getElementById('kcal-auto-badge').style.display = 'none';
+  estimateCalories();
+}
+
 function logWorkout() {
   const day = DAYS[state.currentDay];
-  const exercises = day.exercises.map((ex, i) => ({
-    name: ex.name,
-    weight: document.getElementById('w-' + i).value || String(ex.weight),
-    repsActual: document.getElementById('r-' + i).value
-  }));
+  const exercises = day.exercises.map((ex, i) => {
+    const wInput = document.getElementById('w-' + i);
+    const rInput = document.getElementById('r-' + i);
+    // Use typed value; if blank, use the placeholder (suggested weight)
+    const weight = wInput.value.trim() || wInput.placeholder;
+    const repsActual = rInput.value.trim() || rInput.placeholder.replace("e.g. 10,9,8", "").trim();
+    return { name: ex.name, weight, repsActual };
+  });
+  const duration   = parseInt(document.getElementById('session-duration').value) || null;
+  const kcalBurned = parseInt(document.getElementById('session-kcal-burned').value) || null;
+  // Auto-increment week: count distinct sessions for this day + 1
+  const sessionCount = state.workoutLogs.filter(l => l.day === state.currentDay).length;
+  const weekNum = sessionCount + 1;
+
   const entry = {
+    type: 'program',
     day: state.currentDay,
-    week: state.currentWeek,
+    week: weekNum,
     dayName: day.name,
     exercises,
+    duration,
+    kcalBurned,
     date: todayDisplay(),
     isoDate: todayStr()
   };
-  state.workoutLogs = state.workoutLogs.filter(l => !(l.day === state.currentDay && l.week === state.currentWeek));
+  // Allow multiple sessions on same day — don't deduplicate by week any more
   state.workoutLogs.unshift(entry);
-  state.activityLog.unshift({type:'workout', text:`Logged ${day.name} — Week ${state.currentWeek}`, date: todayDisplay()});
+  const burnText = kcalBurned ? ` · ~${kcalBurned} kcal burned` : '';
+  const durText  = duration   ? ` · ${duration} min` : '';
+  state.activityLog.unshift({type:'workout', text:`${day.name} — session ${weekNum}${durText}${burnText}`, date: todayDisplay()});
   saveState();
-  renderWorkoutHistory();
+  renderExercises();
+  renderExerciseHistory();
   updateDashboard();
+  document.getElementById('session-duration').value = '';
+  document.getElementById('session-kcal-burned').value = '';
+  delete document.getElementById('session-kcal-burned').dataset.userEdited;
+  document.getElementById('kcal-auto-badge').style.display = 'none';
+  document.getElementById('session-burn-preview').style.display = 'none';
   showToast('Workout saved ✓');
 }
 
-function renderWorkoutHistory() {
-  const el = document.getElementById('workout-history');
-  if (!state.workoutLogs.length) { el.innerHTML = '<div class="empty">No workouts saved yet.</div>'; return; }
-  el.innerHTML = state.workoutLogs.slice(0,8).map(l => `
-    <div style="padding:10px 0;border-bottom:0.5px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-        <span style="font-size:13px;font-weight:600;">${l.dayName}</span>
-        <span style="font-size:12px;color:var(--text3);">Wk ${l.week} · ${l.date}</span>
+// ─── EXERCISE HISTORY (per-exercise across all sessions) ─────
+function renderExerciseHistory() {
+  const day = DAYS[state.currentDay];
+  const el = document.getElementById('exercise-history-list');
+  const label = document.getElementById('history-day-label');
+  label.textContent = day.name;
+
+  // Sort by isoDate ascending so oldest is at top
+  const logs = state.workoutLogs
+    .filter(l => l.day === state.currentDay && l.type !== 'custom')
+    .sort((a, b) => (a.isoDate || '') > (b.isoDate || '') ? 1 : -1);
+
+  if (!logs.length) {
+    el.innerHTML = '<div class="empty">No sessions logged for this day yet.</div>';
+    return;
+  }
+
+  el.innerHTML = day.exercises.map((ex, i) => {
+    const entries = logs.map(l => ({
+      session: l.week, date: l.date,
+      weight: l.exercises[i]?.weight || '—',
+      reps: l.exercises[i]?.repsActual || '—'
+    }));
+    const numWeights = entries.map(e => parseFloat(e.weight)).filter(v => !isNaN(v));
+    const prVal = numWeights.length ? Math.max(...numWeights) : null;
+    const id = 'exh-' + i;
+    return `<div class="ex-history-item">
+      <div class="ex-history-toggle" onclick="toggleExHistory('${id}')">
+        <span>${ex.name} ${prVal ? `<span style="font-size:11px;color:var(--text3);font-weight:400;">· best: <strong style="color:var(--amber);">${prVal}kg</strong></span>` : ''}</span>
+        <span class="arrow" style="font-size:14px;display:inline-block;transition:transform 0.2s;">▾</span>
       </div>
-      ${l.exercises.map(e=>`<div style="font-size:12px;color:var(--text3);margin:2px 0;">${e.name}: <strong style="color:var(--text);">${e.weight}kg</strong>${e.repsActual?' · '+e.repsActual:''}</div>`).join('')}
+      <div class="ex-history-body" id="${id}">
+        <div class="week-row-header"><span>Session</span><span>Weight</span><span>Reps done</span><span>Date</span></div>
+        ${entries.map(e => {
+          const isPR = prVal && parseFloat(e.weight) >= prVal;
+          return `<div class="week-row">
+            <span class="wk">#${e.session}</span>
+            <span class="wt ${isPR ? 'pr' : ''}">${e.weight}${e.weight !== 'BW' && e.weight !== '—' ? 'kg' : ''}${isPR ? ' 🏆' : ''}</span>
+            <span class="reps">${e.reps}</span>
+            <span class="date">${e.date}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleExHistory(id) {
+  const body = document.getElementById(id);
+  const toggle = body.previousElementSibling;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  toggle.classList.toggle('open', !isOpen);
+}
+
+// ─── CUSTOM WORKOUT ───────────────────────────────────────
+const ACTIVITY_ICONS = {
+  boxing:'🥊', football:'⚽', inclinewalk:'🚶',
+  running:'🏃', cycling:'🚴', swimming:'🏊',
+  yoga:'🧘', hiit:'🔥', other:'⚡'
+};
+
+function logCustomWorkout() {
+  const type = document.getElementById('custom-type').value;
+  const otherName = document.getElementById('custom-other-name').value.trim();
+  const name = type === 'other' ? (otherName || 'Custom') : type === 'inclinewalk' ? 'Incline walk' : type.charAt(0).toUpperCase() + type.slice(1);
+  const duration = parseInt(document.getElementById('custom-duration').value) || 0;
+  if (!duration) { showToast('Please enter a duration'); return; }
+  const intensity = document.getElementById('custom-intensity').value;
+  const kcal = parseInt(document.getElementById('custom-kcal').value) || null;
+  const notes = document.getElementById('custom-notes').value.trim();
+  const incline = type === 'inclinewalk' ? (parseFloat(document.getElementById('custom-incline').value) || null) : null;
+  const speed = type === 'inclinewalk' ? (parseFloat(document.getElementById('custom-speed').value) || null) : null;
+
+  const entry = {
+    type: 'custom',
+    activityType: type,
+    name, duration, intensity, kcal, notes, incline, speed,
+    date: todayDisplay(),
+    isoDate: todayStr(),
+    id: Date.now()
+  };
+  if (!state.customWorkouts) state.customWorkouts = [];
+  state.customWorkouts.unshift(entry);
+  state.activityLog.unshift({type:'custom', text:`${name} — ${duration} min (${intensity})`, date: todayDisplay()});
+  ['custom-duration','custom-kcal','custom-notes','custom-incline','custom-speed'].forEach(id => document.getElementById(id).value='');
+  saveState();
+  renderCustomHistory();
+  updateDashboard();
+  showToast(`${name} saved ✓`);
+}
+
+function renderCustomHistory() {
+  if (!state.customWorkouts) state.customWorkouts = [];
+  const el = document.getElementById('custom-workout-history');
+  if (!state.customWorkouts.length) { el.innerHTML = '<div class="empty">No custom activities logged yet.</div>'; return; }
+  el.innerHTML = state.customWorkouts.map(e => {
+    const icon = ACTIVITY_ICONS[e.activityType] || '⚡';
+    const inclineInfo = e.incline || e.speed ? `<span style="font-size:12px;color:var(--text3);">${e.incline?e.incline+'% incline':''}${e.incline&&e.speed?' · ':''}${e.speed?e.speed+' km/h':''}</span>` : '';
+    return `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);">
+      <div style="width:34px;height:34px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-size:18px;line-height:1;">${icon}</span>
+      </div>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+          <span style="font-size:13px;font-weight:600;">${e.name}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11px;color:var(--text3);">${e.date}</span>
+            <button onclick="confirmDelete(this, ()=>deleteCustomWorkout(${e.id}))" style="border:none;background:none;cursor:pointer;padding:2px;color:#a32d2d;" title="Delete">✕</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--text2);">${e.duration} min</span>
+          <span class="intensity-badge intensity-${e.intensity}">${e.intensity}</span>
+          ${e.kcal ? `<span style="font-size:12px;color:var(--coral);"><i class="ti ti-flame" style="font-size:11px;vertical-align:-1px;"></i> ${e.kcal} kcal</span>` : ''}
+          ${inclineInfo}
+        </div>
+        ${e.notes ? `<div style="font-size:12px;color:var(--text3);margin-top:3px;">${e.notes}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteCustomWorkout(id) {
+  state.customWorkouts = (state.customWorkouts||[]).filter(e => e.id !== id);
+  saveState();
+  renderCustomHistory();
+  renderFullHistory();
+  renderCalendar();
+  renderWeeklyWorkoutSummary();
+  updateDashboard();
+  showToast('Activity deleted');
+}
+
+function deleteProgramWorkout(day, week) {
+  state.workoutLogs = state.workoutLogs.filter(l => !(l.day === day && l.week === week));
+  saveState();
+  renderExerciseHistory();
+  renderFullHistory();
+  renderCalendar();
+  renderWeeklyWorkoutSummary();
+  renderPersonalRecords();
+  updateDashboard();
+  showToast('Workout deleted');
+}
+
+function deleteStatEntry(idx) {
+  state.statLogs.splice(idx, 1);
+  saveState();
+  renderStatLog();
+  renderProgressSummary();
+  renderWeightChart();
+  updateDashboard();
+  showToast('Entry deleted');
+}
+
+// Inline confirmation: shows Cancel/Confirm in place of the delete button
+function confirmDelete(btn, onConfirm) {
+  // If already showing confirm UI, skip
+  if (btn.dataset.confirming) return;
+  btn.dataset.confirming = '1';
+  const original = btn.innerHTML;
+  const originalStyle = btn.getAttribute('style');
+  btn.innerHTML = '⚠ Sure?';
+  btn.style.cssText = 'border:none;background:#a32d2d;color:white;cursor:pointer;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.innerHTML = 'Cancel';
+  cancelBtn.style.cssText = 'border:0.5px solid var(--border2);background:var(--surface);color:var(--text2);cursor:pointer;padding:3px 8px;border-radius:6px;font-size:12px;margin-left:4px;';
+  btn.after(cancelBtn);
+
+  cancelBtn.onclick = (e) => {
+    e.stopPropagation();
+    btn.innerHTML = original;
+    btn.setAttribute('style', originalStyle);
+    delete btn.dataset.confirming;
+    cancelBtn.remove();
+  };
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    cancelBtn.remove();
+    onConfirm();
+  };
+}
+
+// ─── CALENDAR ────────────────────────────────────────────
+const DAY_COLORS = ['#D85A30','#BA7517','#185FA5','#534AB7'];
+const DAY_NAMES  = ['Push','Quads','Pull','Glutes'];
+const CUSTOM_COLOR = '#1D9E75';
+
+let calYear, calMonth, calSelectedDate = null;
+
+function initCalendar() {
+  const now = new Date();
+  calYear  = now.getFullYear();
+  calMonth = now.getMonth();
+}
+
+function calPrevMonth() {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function calNextMonth() {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+function buildDayMap() {
+  const m = {};
+  state.workoutLogs.forEach(l => {
+    if (!l.isoDate) return;
+    if (!m[l.isoDate]) m[l.isoDate] = [];
+    m[l.isoDate].push({color:DAY_COLORS[l.day]||CUSTOM_COLOR, label:DAY_NAMES[l.day]||l.dayName, entry:l, kind:'program'});
+  });
+  (state.customWorkouts||[]).forEach(l => {
+    if (!l.isoDate) return;
+    if (!m[l.isoDate]) m[l.isoDate] = [];
+    m[l.isoDate].push({color:CUSTOM_COLOR, label:l.name, entry:l, kind:'custom'});
+  });
+  return m;
+}
+
+function renderCalendar() {
+  const label = document.getElementById('cal-month-label');
+  if (!label) return;
+  label.textContent = new Date(calYear, calMonth, 1).toLocaleDateString('en-GB', {month:'long', year:'numeric'});
+
+  const dayMap = buildDayMap();
+  const grid   = document.getElementById('cal-grid');
+  const todayIso = todayStr();
+
+  const firstDay   = new Date(calYear, calMonth, 1).getDay();
+  const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  let cells = '';
+  for (let i = 0; i < startOffset; i++) cells += `<div class="cal-cell empty"></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entries = dayMap[iso] || [];
+    const isToday    = iso === todayIso;
+    const isSelected = iso === calSelectedDate;
+    const dots = entries.map(e => `<div class="cal-dot" style="background:${e.color};" title="${e.label}"></div>`).join('');
+    cells += `<div class="cal-cell${isToday?' today':''}${isSelected?' selected':''}" onclick="selectCalDay('${iso}')">
+      <div class="cal-num">${d}</div>
+      ${dots ? `<div class="cal-dots">${dots}</div>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = cells;
+
+  if (calSelectedDate) showCalDayDetail(calSelectedDate, dayMap[calSelectedDate]||[]);
+}
+
+function selectCalDay(iso) {
+  calSelectedDate = calSelectedDate === iso ? null : iso;
+  const detail = document.getElementById('cal-day-detail');
+  if (!calSelectedDate) { renderCalendar(); detail.style.display='none'; return; }
+  renderCalendar();
+  showCalDayDetail(iso, buildDayMap()[iso]||[]);
+}
+
+function showCalDayDetail(iso, entries) {
+  const el = document.getElementById('cal-day-detail');
+  const displayDate = new Date(iso+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  el.style.display = 'block';
+  if (!entries.length) {
+    el.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">${displayDate}</div><div class="empty">Rest day — no workout logged.</div>`;
+    return;
+  }
+  el.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;">${displayDate}</div>` +
+    entries.map(e => {
+      if (e.kind === 'program') {
+        const exList = (e.entry.exercises||[]).map(x =>
+          `<span style="margin-right:10px;white-space:nowrap;"><strong style="color:var(--text);">${x.weight}${x.weight!=='BW'?'kg':''}</strong> ${x.name}${x.repsActual?' · '+x.repsActual:''}</span>`
+        ).join('');
+        const dur  = e.entry.duration   ? `<span style="color:var(--text3);"> · ${e.entry.duration} min</span>` : '';
+        const burn = e.entry.kcalBurned ? `<span style="color:var(--coral);"> · ${e.entry.kcalBurned} kcal</span>` : '';
+        return `<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+          <div style="width:10px;height:10px;border-radius:2px;background:${e.color};flex-shrink:0;margin-top:3px;"></div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);">${e.entry.dayName}${dur}${burn}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px;line-height:2.0;">${exList}</div>
+          </div>
+        </div>`;
+      } else {
+        const dur  = e.entry.duration ? `${e.entry.duration} min` : '';
+        const burn = e.entry.kcal     ? ` · ${e.entry.kcal} kcal` : '';
+        const inc  = e.entry.incline  ? ` · ${e.entry.incline}% incline` : '';
+        const spd  = e.entry.speed    ? ` · ${e.entry.speed} km/h` : '';
+        const notes = e.entry.notes   ? ` · ${e.entry.notes}` : '';
+        return `<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${e.color};flex-shrink:0;margin-top:3px;"></div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);">${e.entry.name}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">${dur}${burn}${inc}${spd}${notes}</div>
+          </div>
+        </div>`;
+      }
+    }).join('');
+}
+
+function renderFullHistory() {
+  const filterType = document.getElementById('history-filter-type').value;
+  const filterDay = document.getElementById('history-filter-day').value;
+  const el = document.getElementById('full-history-list');
+
+  let programLogs = (filterType === 'custom') ? [] : [...state.workoutLogs];
+  let customLogs = (filterType === 'program') ? [] : [...(state.customWorkouts || [])];
+
+  if (filterDay !== 'all' && filterType !== 'custom') {
+    programLogs = programLogs.filter(l => String(l.day) === filterDay);
+  }
+
+  // Merge and sort by date descending
+  const allLogs = [
+    ...programLogs.map(l => ({...l, _kind:'program'})),
+    ...customLogs.map(l => ({...l, _kind:'custom'}))
+  ].sort((a,b) => (b.isoDate||'') > (a.isoDate||'') ? 1 : -1);
+
+  if (!allLogs.length) {
+    el.innerHTML = '<div class="card"><div class="empty">No workouts match this filter.</div></div>';
+    return;
+  }
+
+  el.innerHTML = allLogs.map(entry => {
+    if (entry._kind === 'program') {
+      const dayColors = ['badge-coral','badge-amber','badge-blue','badge-purple'];
+      const badge = dayColors[entry.day] || 'badge-green';
+      return `<div class="full-history-entry">
+        <div class="fh-header">
+          <div>
+            <span class="badge ${badge}" style="margin-bottom:5px;display:inline-block;">Wk ${entry.week}</span>
+            <div class="fh-title">${entry.dayName}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+            <div class="fh-meta">${entry.date}${entry.duration?`<br><span style="color:var(--text3);">${entry.duration} min</span>`:''}${entry.kcalBurned?`<br><span style="color:var(--coral);"><i class="ti ti-flame" style="font-size:11px;vertical-align:-1px;"></i> ${entry.kcalBurned} kcal</span>`:''}</div>
+            <button onclick="confirmDelete(this, ()=>deleteProgramWorkout(${entry.day},${entry.week}))" style="border:none;background:none;cursor:pointer;padding:2px 4px;color:#a32d2d;font-size:12px;display:inline-flex;align-items:center;gap:3px;" title="Delete">🗑 Delete</button>
+          </div>
+        </div>
+        <div class="fh-exercises">
+          ${entry.exercises.map(e => {
+            const allW = state.workoutLogs.filter(l=>l.day===entry.day).map(l=>l.exercises[entry.exercises.indexOf(e)]?.weight).map(parseFloat).filter(v=>!isNaN(v));
+            const prW = allW.length ? Math.max(...allW) : null;
+            const isPR = prW && parseFloat(e.weight) >= prW;
+            return `<span style="margin-right:14px;white-space:nowrap;"><strong style="color:${isPR?'var(--amber)':'var(--text)'};">${e.weight}${e.weight!=='BW'?'kg':''}</strong> ${e.name}${e.repsActual?' <span style="color:var(--text3);">· '+e.repsActual+'</span>':''}${isPR?' 🏆':''}</span>`;
+          }).join('')}
+        </div>
+      </div>`;
+    } else {
+      const icon = ACTIVITY_ICONS[entry.activityType] || '⚡';
+      return `<div class="full-history-entry">
+        <div class="fh-header">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <span style="font-size:18px;line-height:1;">${icon}</span>
+            </div>
+            <div>
+              <span class="badge badge-green" style="margin-bottom:4px;display:inline-block;">Activity</span>
+              <div class="fh-title">${entry.name}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+            <div class="fh-meta">${entry.date}</div>
+            <button onclick="confirmDelete(this, ()=>deleteCustomWorkout(${entry.id}))" style="border:none;background:none;cursor:pointer;padding:2px 4px;color:#a32d2d;font-size:12px;display:inline-flex;align-items:center;gap:3px;" title="Delete">🗑 Delete</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;">
+          <span style="color:var(--text2);">${entry.duration} min</span>
+          <span class="intensity-badge intensity-${entry.intensity}">${entry.intensity}</span>
+          ${entry.kcal ? `<span style="color:var(--text3);">~${entry.kcal} kcal</span>` : ''}
+          ${entry.notes ? `<span style="color:var(--text3);">· ${entry.notes}</span>` : ''}
+        </div>
+      </div>`;
+    }
+  }).join('');
+}
+
+// ─── FOOD SEARCH ─────────────────────────────────────────
+let searchTimers = {log: null, recipe: null};
+let searchHighlight = {log: -1, recipe: -1};
+
+function debounceSearch(query, target) {
+  clearTimeout(searchTimers[target]);
+  const q = query.trim();
+  if (q.length < 2) {
+    hideSearchResults(target);
+    return;
+  }
+  const spinner = document.getElementById(target === 'log' ? 'food-search-spinner' : 'ri-search-spinner');
+  if (spinner) spinner.style.display = 'inline';
+  searchTimers[target] = setTimeout(() => searchFood(q, target), 400);
+}
+
+async function searchFood(query, target) {
+  const spinner   = document.getElementById(target === 'log' ? 'food-search-spinner' : 'ri-search-spinner');
+  const resultsEl = document.getElementById(target === 'log' ? 'food-search-results' : 'ri-search-results');
+  searchHighlight[target] = -1;
+
+  try {
+    // Open Food Facts — European non-profit, free, no API key, strong EU product coverage
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=10&fields=product_name,brands,food_groups_tags,nutriments`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'FitnessTracker/1.0' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (spinner) spinner.style.display = 'none';
+
+    const products = (data.products || []).filter(p =>
+      p.product_name?.trim() &&
+      p.nutriments &&
+      p.nutriments['energy-kcal_100g'] != null
+    ).slice(0, 8);
+
+    if (!products.length) {
+      resultsEl.style.display = 'block';
+      resultsEl.innerHTML = `<div style="padding:12px 14px;font-size:13px;color:var(--text3);">No results for "${query}". Try a different term or enter manually.</div>`;
+      return;
+    }
+
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = products.map((p, idx) => {
+      const n       = p.nutriments;
+      const kcal    = Math.round(n['energy-kcal_100g'] || 0);
+      const protein = Math.round((n['proteins_100g']      || 0) * 10) / 10;
+      const carbs   = Math.round((n['carbohydrates_100g'] || 0) * 10) / 10;
+      const fat     = Math.round((n['fat_100g']           || 0) * 10) / 10;
+      const brand   = p.brands ? `<span style="color:var(--text3);font-size:11px;"> · ${p.brands.split(',')[0].trim()}</span>` : '';
+      return `<div class="search-result-item" data-idx="${idx}"
+          onclick="selectSearchResult(${idx},'${target}')"
+          onmouseenter="highlightResult(${idx},'${target}')"
+          style="padding:10px 14px;cursor:pointer;border-bottom:0.5px solid var(--border);transition:background 0.1s;"
+          data-name="${escapeAttr(p.product_name)}"
+          data-kcal="${kcal}" data-protein="${protein}" data-carbs="${carbs}" data-fat="${fat}">
+        <div style="font-size:13px;font-weight:500;color:var(--text);">${p.product_name}${brand}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">Per 100g: ${kcal} kcal · P: ${protein}g · C: ${carbs}g · F: ${fat}g</div>
+      </div>`;
+    }).join('');
+
+  } catch(err) {
+    if (spinner) spinner.style.display = 'none';
+    resultsEl.style.display = 'block';
+    // Show a helpful message — in Claude preview APIs are blocked; works fine on GitHub Pages
+    resultsEl.innerHTML = `<div style="padding:12px 14px;">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">Search unavailable here</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.6;">Food search works on your deployed GitHub Pages site but is blocked in this preview. Enter macros manually for now, or deploy the latest file to test search.</div>
+    </div>`;
+  }
+}
+
+function highlightResult(idx, target) {
+  searchHighlight[target] = idx;
+  const resultsEl = document.getElementById(target === 'log' ? 'food-search-results' : 'ri-search-results');
+  resultsEl.querySelectorAll('.search-result-item').forEach((el, i) => {
+    el.style.background = i === idx ? 'var(--surface2)' : '';
+  });
+}
+
+function handleSearchKey(e, target) {
+  const resultsEl = document.getElementById(target === 'log' ? 'food-search-results' : 'ri-search-results');
+  if (resultsEl.style.display === 'none') return;
+  const items = resultsEl.querySelectorAll('.search-result-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    searchHighlight[target] = Math.min(searchHighlight[target] + 1, items.length - 1);
+    highlightResult(searchHighlight[target], target);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    searchHighlight[target] = Math.max(searchHighlight[target] - 1, 0);
+    highlightResult(searchHighlight[target], target);
+  } else if (e.key === 'Enter' && searchHighlight[target] >= 0) {
+    e.preventDefault();
+    selectSearchResult(searchHighlight[target], target);
+  } else if (e.key === 'Escape') {
+    hideSearchResults(target);
+  }
+}
+
+function selectSearchResult(idx, target) {
+  const resultsEl = document.getElementById(target === 'log' ? 'food-search-results' : 'ri-search-results');
+  const item = resultsEl.querySelectorAll('.search-result-item')[idx];
+  if (!item) return;
+
+  const name    = item.dataset.name;
+  const kcal100 = parseFloat(item.dataset.kcal);
+  const prot100 = parseFloat(item.dataset.protein);
+  const carb100 = parseFloat(item.dataset.carbs);
+  const fat100  = parseFloat(item.dataset.fat);
+
+  hideSearchResults(target);
+
+  // Show portion picker inline
+  showPortionPicker(name, kcal100, prot100, carb100, fat100, target);
+}
+
+function showPortionPicker(name, kcal100, prot100, carb100, fat100, target) {
+  const containerId = target === 'log' ? 'food-search-results' : 'ri-search-results';
+  const el = document.getElementById(containerId);
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="padding:12px 14px;">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;">${name}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="flex:1;">
+          <label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:4px;">Amount (g)</label>
+          <input type="number" id="portion-g-${target}" value="100" min="1"
+            style="width:100%;padding:7px 10px;border:0.5px solid var(--border2);border-radius:var(--radius-md);font-size:14px;background:var(--surface);color:var(--text);"
+            oninput="updatePortionPreview('${escapeAttr(name)}',${kcal100},${prot100},${carb100},${fat100},'${target}')">
+        </div>
+      </div>
+      <div id="portion-preview-${target}" style="font-size:12px;color:var(--text3);margin-bottom:10px;">${kcal100} kcal · P: ${prot100}g · C: ${carb100}g · F: ${fat100}g</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary" style="flex:1;" onclick="applyPortionResult('${escapeAttr(name)}',${kcal100},${prot100},${carb100},${fat100},'${target}')">
+          ${target === 'log' ? '+ Add to log' : '+ Add as ingredient'}
+        </button>
+        <button class="btn-secondary" onclick="hideSearchResults('${target}')">✕</button>
+      </div>
+    </div>`;
+}
+
+function updatePortionPreview(name, kcal100, prot100, carb100, fat100, target) {
+  const g = parseFloat(document.getElementById(`portion-g-${target}`).value) || 100;
+  const r = g / 100;
+  document.getElementById(`portion-preview-${target}`).textContent =
+    `${Math.round(kcal100*r)} kcal · P: ${(prot100*r).toFixed(1)}g · C: ${(carb100*r).toFixed(1)}g · F: ${(fat100*r).toFixed(1)}g`;
+}
+
+function applyPortionResult(name, kcal100, prot100, carb100, fat100, target) {
+  const g = parseFloat(document.getElementById(`portion-g-${target}`).value) || 100;
+  const r = g / 100;
+  const label = g === 100 ? name : `${name} (${g}g)`;
+
+  hideSearchResults(target);
+  if (target === 'log') {
+    document.getElementById('food-search').value  = '';
+    document.getElementById('food-name').value    = label;
+    document.getElementById('food-kcal').value    = Math.round(kcal100 * r);
+    document.getElementById('food-protein').value = (prot100 * r).toFixed(1);
+    document.getElementById('food-carbs').value   = (carb100 * r).toFixed(1);
+    document.getElementById('food-fat').value     = (fat100  * r).toFixed(1);
+  } else {
+    document.getElementById('ri-search').value    = '';
+    document.getElementById('ri-name').value      = label;
+    document.getElementById('ri-kcal').value      = Math.round(kcal100 * r);
+    document.getElementById('ri-protein').value   = (prot100 * r).toFixed(1);
+    document.getElementById('ri-carbs').value     = (carb100 * r).toFixed(1);
+    document.getElementById('ri-fat').value       = (fat100  * r).toFixed(1);
+  }
+  showToast(`${name} loaded — confirm to add`);
+}
+
+function hideSearchResults(target) {
+  const id = target === 'log' ? 'food-search-results' : 'ri-search-results';
+  const el = document.getElementById(id);
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+  searchHighlight[target] = -1;
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('#food-search-results') && !e.target.closest('#food-search'))
+    hideSearchResults('log');
+  if (!e.target.closest('#ri-search-results') && !e.target.closest('#ri-search'))
+    hideSearchResults('recipe');
+});
+
+// ─── BARCODE SCANNER ─────────────────────────────────────
+let scannerTarget = 'log'; // 'log' or 'recipe'
+let codeReader = null;
+let scannerActive = false;
+
+function openScanner(target) {
+  scannerTarget = target;
+  const modal = document.getElementById('scanner-modal');
+  modal.style.display = 'flex';
+  document.getElementById('scanner-result').style.display = 'none';
+  document.getElementById('scanner-actions').style.display = 'none';
+  document.getElementById('scanner-status').textContent = 'Starting camera…';
+  startScanner();
+}
+
+function closeScanner() {
+  stopScanner();
+  document.getElementById('scanner-modal').style.display = 'none';
+}
+
+function stopScanner() {
+  if (codeReader) {
+    try { codeReader.reset(); } catch(e) {}
+    codeReader = null;
+  }
+  const video = document.getElementById('scanner-video');
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+  }
+  scannerActive = false;
+}
+
+async function startScanner() {
+  stopScanner();
+  const video = document.getElementById('scanner-video');
+  const statusEl = document.getElementById('scanner-status');
+
+  // Check ZXing loaded
+  if (typeof ZXingBrowser === 'undefined') {
+    statusEl.textContent = 'Scanner library not loaded. Try refreshing.';
+    return;
+  }
+
+  try {
+    const hints = new Map();
+    // Prefer back camera on mobile
+    const constraints = { video: { facingMode: { ideal: 'environment' } } };
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = stream;
+    await video.play();
+
+    codeReader = new ZXingBrowser.BrowserMultiFormatReader();
+    scannerActive = true;
+    statusEl.textContent = 'Point camera at a barcode…';
+
+    // Decode from stream
+    const decodeLoop = async () => {
+      if (!scannerActive) return;
+      try {
+        const result = await codeReader.decodeOnceFromVideoElement(video);
+        if (result && result.getText()) {
+          onBarcodeDetected(result.getText());
+        }
+      } catch(e) {
+        if (scannerActive) {
+          // Keep trying — NotFoundException just means no barcode yet
+          if (e.name !== 'NotFoundException') {
+            statusEl.textContent = 'Scan error. Try again.';
+          } else {
+            setTimeout(decodeLoop, 200);
+          }
+        }
+      }
+    };
+    decodeLoop();
+  } catch(err) {
+    if (err.name === 'NotAllowedError') {
+      statusEl.textContent = '⚠ Camera permission denied. Please allow camera access and try again.';
+    } else {
+      statusEl.textContent = '⚠ Could not access camera: ' + err.message;
+    }
+  }
+}
+
+async function onBarcodeDetected(barcode) {
+  stopScanner();
+  const statusEl = document.getElementById('scanner-status');
+  statusEl.textContent = `Barcode: ${barcode} — looking up product…`;
+
+  try {
+    // Open Food Facts API — free, no key needed
+    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,nutriments,serving_size,brands`);
+    const data = await res.json();
+
+    if (data.status !== 1 || !data.product) {
+      statusEl.textContent = `Product not found (${barcode}). Enter details manually.`;
+      prefillScanResult({name:'', kcal:0, protein:0, carbs:0, fat:0});
+      return;
+    }
+
+    const p = data.product;
+    const n = p.nutriments || {};
+
+    // Per 100g values — most reliable field in OFF
+    const per100 = {
+      name: [p.brands, p.product_name].filter(Boolean).join(' — ') || 'Unknown product',
+      kcal:    Math.round(n['energy-kcal_100g'] || n['energy_100g'] / 4.184 || 0),
+      protein: Math.round((n['proteins_100g'] || 0) * 10) / 10,
+      carbs:   Math.round((n['carbohydrates_100g'] || 0) * 10) / 10,
+      fat:     Math.round((n['fat_100g'] || 0) * 10) / 10,
+    };
+
+    showScanResult(per100, barcode);
+  } catch(err) {
+    statusEl.textContent = 'Network error. Check your connection and try again.';
+  }
+}
+
+function showScanResult(product, barcode) {
+  const resultEl  = document.getElementById('scanner-result');
+  const actionsEl = document.getElementById('scanner-actions');
+  const statusEl  = document.getElementById('scanner-status');
+  const nameEl    = document.getElementById('scanner-product-name');
+  const macrosEl  = document.getElementById('scanner-product-macros');
+
+  statusEl.textContent = 'Product found — check the details below:';
+  nameEl.textContent = product.name;
+  macrosEl.textContent = `Per 100g: ${product.kcal} kcal · P: ${product.protein}g · C: ${product.carbs}g · F: ${product.fat}g`;
+
+  resultEl.style.display = 'block';
+  actionsEl.style.display = 'flex';
+
+  // Serving size input
+  actionsEl.innerHTML = `
+    <div style="width:100%;margin-bottom:8px;">
+      <label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:4px;">Amount (g)</label>
+      <input type="number" id="scan-amount" value="100" min="1" style="width:100%;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--radius-md);font-size:14px;background:var(--surface);color:var(--text);" oninput="updateScanPreview(${product.kcal},${product.protein},${product.carbs},${product.fat})">
+      <div id="scan-preview" style="font-size:12px;color:var(--text3);margin-top:4px;">${product.kcal} kcal · P: ${product.protein}g · C: ${product.carbs}g · F: ${product.fat}g</div>
+    </div>
+    <button class="btn-primary" style="flex:1;" onclick="applyScanResult('${escapeAttr(product.name)}',${product.kcal},${product.protein},${product.carbs},${product.fat})">
+      ${scannerTarget === 'log' ? '+ Add to log' : '+ Add as ingredient'}
+    </button>
+    <button class="btn-secondary" onclick="startScanner()">↺ Scan again</button>`;
+}
+
+function updateScanPreview(kcal100, prot100, carb100, fat100) {
+  const g = parseFloat(document.getElementById('scan-amount').value) || 100;
+  const ratio = g / 100;
+  document.getElementById('scan-preview').textContent =
+    `${Math.round(kcal100*ratio)} kcal · P: ${(prot100*ratio).toFixed(1)}g · C: ${(carb100*ratio).toFixed(1)}g · F: ${(fat100*ratio).toFixed(1)}g`;
+}
+
+function applyScanResult(name, kcal100, prot100, carb100, fat100) {
+  const g = parseFloat(document.getElementById('scan-amount').value) || 100;
+  const ratio = g / 100;
+  const label = g === 100 ? name : `${name} (${g}g)`;
+
+  const vals = {
+    name:    label,
+    kcal:    Math.round(kcal100 * ratio),
+    protein: Math.round(prot100 * ratio * 10) / 10,
+    carbs:   Math.round(carb100 * ratio * 10) / 10,
+    fat:     Math.round(fat100  * ratio * 10) / 10
+  };
+
+  closeScanner();
+
+  if (scannerTarget === 'log') {
+    // Fill the log food form
+    document.getElementById('food-name').value    = vals.name;
+    document.getElementById('food-kcal').value    = vals.kcal;
+    document.getElementById('food-protein').value = vals.protein;
+    document.getElementById('food-carbs').value   = vals.carbs;
+    document.getElementById('food-fat').value     = vals.fat;
+    setDietMode('log');
+    showToast('Product loaded — tap "+ Add food" to confirm');
+  } else {
+    // Fill the recipe ingredient form
+    document.getElementById('ri-name').value    = vals.name;
+    document.getElementById('ri-kcal').value    = vals.kcal;
+    document.getElementById('ri-protein').value = vals.protein;
+    document.getElementById('ri-carbs').value   = vals.carbs;
+    document.getElementById('ri-fat').value     = vals.fat;
+    setDietMode('create');
+    showToast('Ingredient loaded — tap "+ Add ingredient" to confirm');
+  }
+}
+
+function escapeAttr(str) {
+  return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// Close modal on backdrop click
+document.addEventListener('click', e => {
+  const modal = document.getElementById('scanner-modal');
+  if (e.target === modal) closeScanner();
+});
+
+// ─── DIET MODE ────────────────────────────────────────────
+function setDietMode(mode) {
+  ['log','recipes','create'].forEach(m => {
+    document.getElementById('diet-'+m+'-mode').style.display = m===mode ? 'block' : 'none';
+    document.getElementById('diet-mode-'+m).classList.toggle('active', m===mode);
+  });
+  if (mode === 'recipes') renderRecipesList();
+}
+
+// ─── RECIPES ──────────────────────────────────────────────
+let recipeIngredients = []; // staging area while building
+
+function addRecipeIngredient() {
+  const name = document.getElementById('ri-name').value.trim();
+  if (!name) { showToast('Please enter an ingredient name'); return; }
+  const kcal    = parseFloat(document.getElementById('ri-kcal').value)    || 0;
+  const protein = parseFloat(document.getElementById('ri-protein').value) || 0;
+  const carbs   = parseFloat(document.getElementById('ri-carbs').value)   || 0;
+  const fat     = parseFloat(document.getElementById('ri-fat').value)     || 0;
+  recipeIngredients.push({name, kcal, protein, carbs, fat, id: Date.now()});
+  ['ri-name','ri-kcal','ri-protein','ri-carbs','ri-fat'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ri-name').focus();
+  renderRecipeBuilder();
+}
+
+function removeRecipeIngredient(id) {
+  recipeIngredients = recipeIngredients.filter(i => i.id !== id);
+  renderRecipeBuilder();
+}
+
+function renderRecipeBuilder() {
+  const el = document.getElementById('recipe-ingredients-list');
+  const preview = document.getElementById('recipe-totals-preview');
+  if (!recipeIngredients.length) {
+    el.innerHTML = '<div class="empty" style="margin-bottom:8px;">No ingredients yet.</div>';
+    preview.style.display = 'none';
+    return;
+  }
+  el.innerHTML = recipeIngredients.map(i => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+      <span style="flex:1;font-weight:500;color:var(--text);">${i.name}</span>
+      <span style="font-size:12px;color:var(--text3);">${i.kcal} kcal</span>
+      <span style="font-size:12px;color:var(--coral);">P:${i.protein}g</span>
+      <span style="font-size:12px;color:var(--amber);">C:${i.carbs}g</span>
+      <span style="font-size:12px;color:var(--blue);">F:${i.fat}g</span>
+      <button onclick="removeRecipeIngredient(${i.id})" style="border:none;background:none;cursor:pointer;padding:2px 4px;color:#a32d2d;font-size:13px;">✕</button>
     </div>`).join('');
+  const totals = recipeIngredients.reduce((a,i) => ({
+    kcal: a.kcal+i.kcal, protein: a.protein+i.protein, carbs: a.carbs+i.carbs, fat: a.fat+i.fat
+  }), {kcal:0,protein:0,carbs:0,fat:0});
+  document.getElementById('rp-kcal').textContent  = `${Math.round(totals.kcal)} kcal`;
+  document.getElementById('rp-prot').textContent  = `P: ${Math.round(totals.protein)}g`;
+  document.getElementById('rp-carbs').textContent = `C: ${Math.round(totals.carbs)}g`;
+  document.getElementById('rp-fat').textContent   = `F: ${Math.round(totals.fat)}g`;
+  preview.style.display = 'block';
+}
+
+function saveRecipe() {
+  const name = document.getElementById('recipe-name').value.trim();
+  if (!name) { showToast('Please enter a recipe name'); return; }
+  if (!recipeIngredients.length) { showToast('Add at least one ingredient'); return; }
+  const meal = document.getElementById('recipe-meal').value;
+  if (!state.recipes) state.recipes = [];
+  const totals = recipeIngredients.reduce((a,i) => ({
+    kcal: a.kcal+i.kcal, protein: a.protein+i.protein, carbs: a.carbs+i.carbs, fat: a.fat+i.fat
+  }), {kcal:0,protein:0,carbs:0,fat:0});
+  state.recipes.push({
+    id: Date.now(),
+    name,
+    meal,
+    ingredients: [...recipeIngredients],
+    totals
+  });
+  saveState();
+  clearRecipeBuilder();
+  showToast(`"${name}" saved ✓`);
+  setDietMode('recipes');
+}
+
+function clearRecipeBuilder() {
+  recipeIngredients = [];
+  document.getElementById('recipe-name').value = '';
+  renderRecipeBuilder();
+}
+
+function renderRecipesList() {
+  if (!state.recipes) state.recipes = [];
+  const el = document.getElementById('recipes-list');
+  if (!state.recipes.length) {
+    el.innerHTML = '<div class="empty">No recipes yet. Create one using the "Create recipe" tab.</div>';
+    return;
+  }
+  el.innerHTML = state.recipes.map(r => {
+    const t = r.totals;
+    return `<div style="padding:12px 0;border-bottom:0.5px solid var(--border);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px;">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);">${r.name}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Default: ${r.meal} · ${r.ingredients.length} ingredient${r.ingredients.length!==1?'s':''}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <button onclick="logRecipe(${r.id})" style="padding:6px 12px;background:var(--accent);color:white;border:none;border-radius:var(--radius-md);font-size:12px;font-weight:600;cursor:pointer;">+ Log</button>
+          <button onclick="confirmDelete(this, ()=>deleteRecipe(${r.id}))" style="border:none;background:none;cursor:pointer;padding:4px 6px;color:#a32d2d;font-size:12px;">🗑</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;font-size:12px;margin-bottom:6px;">
+        <span style="font-weight:600;">${Math.round(t.kcal)} kcal</span>
+        <span style="color:var(--coral);">P: ${Math.round(t.protein)}g</span>
+        <span style="color:var(--amber);">C: ${Math.round(t.carbs)}g</span>
+        <span style="color:var(--blue);">F: ${Math.round(t.fat)}g</span>
+      </div>
+      <div style="font-size:12px;color:var(--text3);">${r.ingredients.map(i=>i.name).join(', ')}</div>
+    </div>`;
+  }).join('');
+}
+
+function logRecipe(id) {
+  if (!state.recipes) return;
+  const recipe = state.recipes.find(r => r.id === id);
+  if (!recipe) return;
+  // Log as a single combined food entry using recipe totals
+  const meal = recipe.meal;
+  state.todayFoods.push({
+    name: recipe.name,
+    kcal: recipe.totals.kcal,
+    protein: recipe.totals.protein,
+    carbs: recipe.totals.carbs,
+    fat: recipe.totals.fat,
+    meal,
+    id: Date.now(),
+    fromRecipe: true
+  });
+  state.activityLog.unshift({type:'food', text:`Logged recipe: ${recipe.name} (${Math.round(recipe.totals.kcal)} kcal)`, date: todayDisplay()});
+  saveState();
+  renderFoodLog();
+  updateDashboard();
+  showToast(`${recipe.name} logged ✓`);
+  setDietMode('log');
+}
+
+function deleteRecipe(id) {
+  state.recipes = (state.recipes||[]).filter(r => r.id !== id);
+  saveState();
+  renderRecipesList();
+  showToast('Recipe deleted');
 }
 
 // ─── DIET ────────────────────────────────────────────────
@@ -557,7 +1967,7 @@ function renderFoodLog() {
       <span class="food-name">${f.name}</span>
       <span class="food-macros"><span style="color:var(--coral);">P:${f.protein}g</span><span style="color:var(--amber);">C:${f.carbs}g</span><span style="color:var(--blue);">F:${f.fat}g</span></span>
       <span class="food-kcal">${f.kcal} kcal</span>
-      <button onclick="removeFood(${f.id})" style="border:none;background:none;cursor:pointer;padding:2px 4px;color:var(--text3);"><i class="ti ti-x" style="font-size:14px;"></i></button>
+      <button onclick="removeFood(${f.id})" style="border:none;background:none;cursor:pointer;padding:2px 4px;color:var(--text3);">✕</button>
     </div>`).join('');
   });
   el.innerHTML = html;
@@ -622,6 +2032,8 @@ function logStats() {
   renderStatLog();
   renderProgressSummary();
   renderWeightChart();
+  renderWeeklyWorkoutSummary();
+  renderPersonalRecords();
   updateDashboard();
   showToast('Stats saved ✓');
 }
@@ -629,13 +2041,14 @@ function logStats() {
 function renderStatLog() {
   const el = document.getElementById('stats-log');
   if (!state.statLogs.length) { el.innerHTML = '<div class="empty">No entries yet.</div>'; return; }
-  el.innerHTML = state.statLogs.map(s => `
-    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+  el.innerHTML = state.statLogs.map((s,idx) => `
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;align-items:center;">
       <span style="color:var(--text3);">${s.date}</span>
-      <div style="display:flex;gap:14px;">
+      <div style="display:flex;gap:14px;align-items:center;">
         <span><strong>${s.weight}</strong> kg</span>
         ${s.bf?`<span style="color:var(--text3);">BF: ${s.bf}%</span>`:''}
         ${s.waist?`<span style="color:var(--text3);">Waist: ${s.waist}cm</span>`:''}
+        <button onclick="confirmDelete(this, ()=>deleteStatEntry(${idx}))" style="border:none;background:none;cursor:pointer;padding:2px;color:#a32d2d;" title="Delete">✕</button>
       </div>
     </div>`).join('');
 }
@@ -649,11 +2062,26 @@ function renderProgressSummary() {
   const diffColor = diff < 0 ? 'var(--accent-dark)' : diff > 0 ? 'var(--coral)' : 'var(--text)';
   const profile = state.profile || {};
   const goalDiff = profile.goalweight ? (last.weight - parseFloat(profile.goalweight)).toFixed(1) : null;
+  const totalWorkouts = state.workoutLogs.length + (state.customWorkouts||[]).length;
   el.innerHTML = `
     <div class="stat-card"><div class="label">Current weight</div><div class="value">${last.weight}</div><div class="unit">kg</div></div>
-    <div class="stat-card"><div class="label">Start weight</div><div class="value">${first.weight}</div><div class="unit">kg</div></div>
-    <div class="stat-card"><div class="label">Total change</div><div class="value" style="color:${diffColor};">${diff>0?'+':''}${diff}</div><div class="unit">kg</div></div>
-    ${goalDiff!==null?`<div class="stat-card"><div class="label">From goal (${profile.goalweight}kg)</div><div class="value" style="color:${goalDiff<=0?'var(--accent-dark)':'var(--amber)'}">${goalDiff>0?'+':''}${goalDiff}</div><div class="unit">kg</div></div>`:''}`;
+    <div class="stat-card"><div class="label">Total change</div><div class="value" style="color:${diffColor};">${diff>0?'+':''}${diff}</div><div class="unit">kg since start</div></div>
+    ${goalDiff!==null?`<div class="stat-card"><div class="label">To goal (${profile.goalweight}kg)</div><div class="value" style="color:${goalDiff<=0?'var(--accent-dark)':'var(--amber)'}">${goalDiff>0?'+':''}${goalDiff}</div><div class="unit">kg</div></div>`:''}
+    <div class="stat-card"><div class="label">Total sessions</div><div class="value">${totalWorkouts}</div><div class="unit">logged</div></div>`;
+}
+
+// ─── CHART TABS ───────────────────────────────────────────
+let workoutsChart = null;
+let strengthChart = null;
+
+function switchChartTab(tab) {
+  ['weight','workouts','strength'].forEach(t => {
+    document.getElementById('chart-'+t+'-panel').style.display = t===tab ? 'block' : 'none';
+    document.getElementById('ctab-'+t).classList.toggle('active', t===tab);
+  });
+  if (tab === 'weight') renderWeightChart();
+  if (tab === 'workouts') renderWorkoutsChart();
+  if (tab === 'strength') { populateStrengthSelect(); renderStrengthChart(); }
 }
 
 function renderWeightChart() {
@@ -666,16 +2094,155 @@ function renderWeightChart() {
   const data = sorted.map(s=>s.weight);
   if (weightChart) weightChart.destroy();
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const textColor = isDark ? '#888' : '#666';
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const tc = isDark ? '#888' : '#666'; const gc = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  // Goal line if set
+  const datasets = [{data, borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.08)', borderWidth:2, fill:true, pointRadius:4, pointBackgroundColor:'#1D9E75', tension:0.35, label:'Weight'}];
+  if (state.profile?.goalweight) {
+    const goal = parseFloat(state.profile.goalweight);
+    datasets.push({data: labels.map(()=>goal), borderColor:'#BA7517', borderDash:[5,5], borderWidth:1.5, pointRadius:0, fill:false, label:'Goal'});
+  }
   weightChart = new Chart(canvas, {
-    type: 'line',
-    data: { labels, datasets: [{data, borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.08)', borderWidth:2, fill:true, pointRadius:4, pointBackgroundColor:'#1D9E75', tension:0.35}]},
-    options: { responsive:true, plugins:{legend:{display:false}}, scales:{
-      x:{ticks:{color:textColor,font:{size:11}},grid:{color:gridColor}},
-      y:{ticks:{color:textColor,font:{size:11},callback:v=>v+'kg'},grid:{color:gridColor}}
+    type:'line', data:{labels, datasets},
+    options:{responsive:true, plugins:{legend:{display:!!state.profile?.goalweight, labels:{font:{size:11},boxWidth:20}}}, scales:{
+      x:{ticks:{color:tc,font:{size:11}},grid:{color:gc}},
+      y:{ticks:{color:tc,font:{size:11},callback:v=>v+'kg'},grid:{color:gc}}
     }}
   });
+}
+
+function renderWorkoutsChart() {
+  const canvas = document.getElementById('workouts-chart');
+  const noMsg = document.getElementById('no-workouts-chart-msg');
+  // Build weeks from workout logs — group by ISO week
+  const weekMap = {};
+  [...state.workoutLogs, ...(state.customWorkouts||[])].forEach(l => {
+    if (!l.isoDate) return;
+    const d = new Date(l.isoDate);
+    // ISO week key: year + week number
+    const startOfYear = new Date(d.getFullYear(), 0, 1);
+    const weekNum = Math.ceil(((d - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+    const key = `${d.getFullYear()}-W${String(weekNum).padStart(2,'0')}`;
+    weekMap[key] = (weekMap[key]||0) + 1;
+  });
+  const keys = Object.keys(weekMap).sort();
+  if (keys.length < 2) { noMsg.style.display='block'; canvas.style.display='none'; if(workoutsChart){workoutsChart.destroy();workoutsChart=null;} return; }
+  noMsg.style.display='none'; canvas.style.display='block';
+  if (workoutsChart) workoutsChart.destroy();
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const tc = isDark ? '#888' : '#666'; const gc = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  workoutsChart = new Chart(canvas, {
+    type:'bar',
+    data:{labels: keys, datasets:[{data: keys.map(k=>weekMap[k]), backgroundColor:'rgba(29,158,117,0.7)', borderColor:'#1D9E75', borderWidth:1, borderRadius:4, label:'Sessions'}]},
+    options:{responsive:true, plugins:{legend:{display:false}}, scales:{
+      x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}},
+      y:{ticks:{color:tc,font:{size:11},stepSize:1},grid:{color:gc},min:0}
+    }}
+  });
+}
+
+function populateStrengthSelect() {
+  const sel = document.getElementById('strength-exercise-select');
+  const current = sel.value;
+  // Gather all exercises that have at least one numeric weight logged
+  const exercises = new Set();
+  DAYS.forEach((day, dayIdx) => {
+    day.exercises.forEach((ex, exIdx) => {
+      const hasData = state.workoutLogs.filter(l=>l.day===dayIdx).some(l=>!isNaN(parseFloat(l.exercises[exIdx]?.weight)));
+      if (hasData) exercises.add(JSON.stringify({day:dayIdx, ex:exIdx, name:ex.name}));
+    });
+  });
+  sel.innerHTML = [...exercises].map(e => {
+    const obj = JSON.parse(e);
+    return `<option value="${obj.day}_${obj.ex}">${obj.name}</option>`;
+  }).join('') || '<option value="">No data yet</option>';
+  if (current) sel.value = current;
+}
+
+function renderStrengthChart() {
+  const canvas = document.getElementById('strength-chart');
+  const noMsg = document.getElementById('no-strength-chart-msg');
+  const sel = document.getElementById('strength-exercise-select').value;
+  if (!sel) { noMsg.style.display='block'; canvas.style.display='none'; if(strengthChart){strengthChart.destroy();strengthChart=null;} return; }
+  const [dayIdx, exIdx] = sel.split('_').map(Number);
+  const logs = state.workoutLogs.filter(l=>l.day===dayIdx && !isNaN(parseFloat(l.exercises[exIdx]?.weight))).sort((a,b)=>a.week-b.week);
+  if (logs.length < 1) { noMsg.style.display='block'; canvas.style.display='none'; return; }
+  noMsg.style.display='none'; canvas.style.display='block';
+  const labels = logs.map(l=>`Wk ${l.week}`);
+  const data = logs.map(l=>parseFloat(l.exercises[exIdx].weight));
+  if (strengthChart) strengthChart.destroy();
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const tc = isDark ? '#888' : '#666'; const gc = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  strengthChart = new Chart(canvas, {
+    type:'line', data:{labels, datasets:[{data, borderColor:'#BA7517', backgroundColor:'rgba(186,117,23,0.08)', borderWidth:2, fill:true, pointRadius:5, pointBackgroundColor:'#BA7517', tension:0.25, label:'Weight (kg)'}]},
+    options:{responsive:true, plugins:{legend:{display:false}}, scales:{
+      x:{ticks:{color:tc,font:{size:11}},grid:{color:gc}},
+      y:{ticks:{color:tc,font:{size:11},callback:v=>v+'kg'},grid:{color:gc}}
+    }}
+  });
+}
+
+function renderWeeklyWorkoutSummary() {
+  const el = document.getElementById('weekly-workout-summary');
+  if (!state.workoutLogs.length && !(state.customWorkouts||[]).length) { el.innerHTML='<div class="empty">No workouts logged yet.</div>'; return; }
+  // Build week groups — keyed by program week for program, by ISO week for custom
+  const weekMap = {};
+  state.workoutLogs.forEach(l => {
+    const k = `Week ${l.week}`;
+    if (!weekMap[k]) weekMap[k] = {days:[], custom:[], kcal:0, duration:0, isoDate:l.isoDate||''};
+    weekMap[k].days.push(l.day);
+    if (l.kcalBurned) weekMap[k].kcal += l.kcalBurned;
+    if (l.duration) weekMap[k].duration += l.duration;
+    if ((l.isoDate||'') > weekMap[k].isoDate) weekMap[k].isoDate = l.isoDate||'';
+  });
+  (state.customWorkouts||[]).forEach(l => {
+    // Group custom under the program week that covers its date, or just its own bucket
+    const key = 'Activities';
+    if (!weekMap[key]) weekMap[key] = {days:[], custom:[], kcal:0, duration:0, isoDate:''};
+    weekMap[key].custom.push(l);
+    if (l.kcal) weekMap[key].kcal += l.kcal;
+    if (l.duration) weekMap[key].duration += l.duration;
+  });
+  const dayColors = ['var(--coral)','var(--amber)','var(--blue)','var(--purple)'];
+  const dayLabels = ['D1 Push','D2 Quads','D3 Pull','D4 Glutes'];
+  const sorted = Object.entries(weekMap).sort((a,b) => {
+    if (a[0].startsWith('Week') && b[0].startsWith('Week')) return parseInt(b[0].split(' ')[1]) - parseInt(a[0].split(' ')[1]);
+    return -1;
+  });
+  el.innerHTML = sorted.map(([k, v]) => {
+    const dots = v.days.map(d => `<div class="wk-dot" style="background:${dayColors[d]};" title="${dayLabels[d]}"></div>`).join('');
+    const customDots = v.custom.map(c => `<div class="wk-dot" style="background:var(--accent);" title="${c.name}"></div>`).join('');
+    const meta = [];
+    if (v.duration) meta.push(`${v.duration} min`);
+    if (v.kcal) meta.push(`<span style="color:var(--coral);">${v.kcal} kcal burned</span>`);
+    return `<div class="wk-summary-row">
+      <span style="font-weight:600;color:var(--text);">${k}</span>
+      <div class="wk-summary-dots">${dots}${customDots}</div>
+      <span style="font-size:12px;color:var(--text3);">${meta.join(' · ')}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderPersonalRecords() {
+  const el = document.getElementById('pr-list');
+  if (!state.workoutLogs.length) { el.innerHTML='<div class="empty">No workouts logged yet.</div>'; return; }
+  const prs = [];
+  DAYS.forEach((day, dayIdx) => {
+    day.exercises.forEach((ex, exIdx) => {
+      const weights = state.workoutLogs.filter(l=>l.day===dayIdx).map(l=>({
+        w: parseFloat(l.exercises[exIdx]?.weight),
+        date: l.date, week: l.week
+      })).filter(e=>!isNaN(e.w));
+      if (!weights.length) return;
+      const best = weights.reduce((a,b)=>a.w>=b.w?a:b);
+      prs.push({name:ex.name, weight:best.w, date:best.date, week:best.week});
+    });
+  });
+  if (!prs.length) { el.innerHTML='<div class="empty">Log some workouts first.</div>'; return; }
+  el.innerHTML = prs.map(p => `<div class="pr-row">
+    <span class="pr-name">${p.name}</span>
+    <span class="pr-val">${p.weight}kg</span>
+    <span class="pr-date">Wk ${p.week} · ${p.date}</span>
+  </div>`).join('');
 }
 
 // ─── PROFILE & TARGETS ───────────────────────────────────
@@ -704,26 +2271,72 @@ function saveTargets() {
 }
 
 function clearAllData() {
-  if (!confirm('This will delete ALL your data permanently. Are you sure?')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  location.reload();
+  const btn = document.getElementById('clear-all-btn');
+  confirmDelete(btn, () => {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  });
+}
+
+// ─── HELPERS ────────────────────────────────────────────
+function getTodayBurned() {
+  // Sum kcalBurned from program workouts today
+  const programBurned = state.workoutLogs
+    .filter(l => l.isoDate === todayStr() && l.kcalBurned)
+    .reduce((s, l) => s + (l.kcalBurned || 0), 0);
+  // Sum from custom workouts today that have kcal
+  const customBurned = (state.customWorkouts || [])
+    .filter(l => l.isoDate === todayStr() && l.kcal)
+    .reduce((s, l) => s + (l.kcal || 0), 0);
+  return programBurned + customBurned;
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────
 function updateDashboard() {
   const t = state.targets;
   const totals = state.todayFoods.reduce((a,f)=>({kcal:a.kcal+f.kcal,protein:a.protein+f.protein,carbs:a.carbs+f.carbs,fat:a.fat+f.fat}),{kcal:0,protein:0,carbs:0,fat:0});
+  const burned = getTodayBurned();
+  const net = Math.round(totals.kcal - burned);
+
+  // Stat cards
   document.getElementById('d-kcal').textContent = Math.round(totals.kcal);
   document.getElementById('d-kcal-t').textContent = t.kcal;
+  document.getElementById('d-burned').textContent = burned;
+  document.getElementById('d-net').textContent = net;
+  document.getElementById('d-net').style.color = net <= t.kcal ? 'var(--accent-dark)' : 'var(--coral)';
+  document.getElementById('d-net-goal').textContent = t.kcal + ' kcal';
   document.getElementById('d-prot').textContent = Math.round(totals.protein);
   document.getElementById('d-prot-t').textContent = t.protein;
-  const weekWorkouts = state.workoutLogs.filter(l => {
-    const diff = Math.floor((new Date() - new Date(l.isoDate)) / 86400000);
-    return diff <= 6;
-  });
-  document.getElementById('d-wk-count').textContent = weekWorkouts.length;
-  const latest = state.statLogs[0];
-  document.getElementById('d-wt').textContent = latest ? latest.weight : '—';
+
+  // Energy balance card
+  document.getElementById('eb-eaten').textContent = Math.round(totals.kcal);
+  document.getElementById('eb-burned').textContent = burned;
+  document.getElementById('eb-net').textContent = net;
+  document.getElementById('eb-net').style.color = net <= t.kcal ? 'var(--accent-dark)' : 'var(--coral)';
+  document.getElementById('eb-target-label').textContent = t.kcal;
+
+  // Balance bar: show net as % of target
+  const barPct = Math.min(100, Math.round(net / t.kcal * 100));
+  const barFill = document.getElementById('eb-bar-fill');
+  barFill.style.width = barPct + '%';
+  barFill.style.background = net <= t.kcal ? 'var(--accent)' : 'var(--coral)';
+
+  const remaining = t.kcal - net;
+  const statusEl = document.getElementById('eb-status-label');
+  const msgEl = document.getElementById('eb-message');
+  if (remaining > 0) {
+    statusEl.textContent = `${remaining} kcal remaining`;
+    statusEl.style.color = 'var(--accent-dark)';
+    msgEl.textContent = burned > 0
+      ? `You've eaten ${Math.round(totals.kcal)} kcal and burned ${burned} kcal. Net ${net} kcal — ${remaining} kcal under your target.`
+      : `You've eaten ${Math.round(totals.kcal)} kcal. Log a workout to see your net calories.`;
+  } else {
+    statusEl.textContent = `${Math.abs(remaining)} kcal over`;
+    statusEl.style.color = 'var(--coral)';
+    msgEl.textContent = `Net ${net} kcal exceeds your ${t.kcal} kcal target by ${Math.abs(remaining)} kcal.`;
+  }
+
+  // Macro bars
   const pct = (v, max) => Math.min(100, Math.round(v/max*100)) + '%';
   document.getElementById('db-kcal-bar').style.width = pct(totals.kcal, t.kcal);
   document.getElementById('db-prot-bar').style.width = pct(totals.protein, t.protein);
@@ -733,11 +2346,24 @@ function updateDashboard() {
   document.getElementById('db-prot-lbl').textContent = `${Math.round(totals.protein)} / ${t.protein} g`;
   document.getElementById('db-carb-lbl').textContent = `${Math.round(totals.carbs)} / ${t.carbs} g`;
   document.getElementById('db-fat-lbl').textContent = `${Math.round(totals.fat)} / ${t.fat} g`;
+
+  // Today's workout panel
   const todayWorkout = state.workoutLogs.find(l => l.isoDate === todayStr());
+  const todayCustom = (state.customWorkouts||[]).filter(l => l.isoDate === todayStr());
   const wEl = document.getElementById('d-today-workout');
-  wEl.innerHTML = todayWorkout
-    ? `<span class="badge badge-green">Done</span> <strong>${todayWorkout.dayName}</strong> — Week ${todayWorkout.week}`
-    : `No workout logged today. <a href="#" onclick="switchTabByName('workout');return false;" style="color:var(--accent);">Log one →</a>`;
+  let wHtml = '';
+  if (todayWorkout) {
+    const burnBadge = todayWorkout.kcalBurned ? `<span style="font-size:12px;color:var(--coral);margin-left:8px;"><i class="ti ti-flame" style="vertical-align:-2px;"></i> ${todayWorkout.kcalBurned} kcal burned</span>` : '';
+    const durBadge = todayWorkout.duration ? `<span style="font-size:12px;color:var(--text3);margin-left:6px;">${todayWorkout.duration} min</span>` : '';
+    wHtml += `<div style="margin-bottom:6px;"><span class="badge badge-green">Weight</span> <strong style="margin-left:4px;">${todayWorkout.dayName}</strong> — Wk ${todayWorkout.week}${durBadge}${burnBadge}</div>`;
+  }
+  todayCustom.forEach(c => {
+    const icon = ACTIVITY_ICONS[c.activityType] || '⚡';
+    const burnBadge = c.kcal ? `<span style="font-size:12px;color:var(--coral);margin-left:8px;"><i class="ti ti-flame" style="vertical-align:-2px;"></i> ${c.kcal} kcal burned</span>` : '';
+    wHtml += `<div><span class="badge badge-blue">Activity</span> <strong style="margin-left:4px;">${c.name}</strong> · ${c.duration} min${burnBadge}</div>`;
+  });
+  wEl.innerHTML = wHtml || `No workout logged today. <a href="#" onclick="switchTabByName('workout');return false;" style="color:var(--accent);">Log one →</a>`;
+
   renderActivityTimeline();
 }
 
@@ -760,7 +2386,6 @@ function showToast(msg) {
 function init() {
   // Restore UI from state
   document.querySelectorAll('.day-btn').forEach((b,i) => b.classList.toggle('selected', i===state.currentDay));
-  document.getElementById('week-label').textContent = 'Week ' + state.currentWeek;
 
   // Profile
   const p = state.profile || {};
@@ -776,10 +2401,14 @@ function init() {
   document.getElementById('t-fat').value = state.targets.fat;
 
   renderExercises();
-  renderWorkoutHistory();
+  renderExerciseHistory();
+  renderCustomHistory();
   renderFoodLog();
+  renderRecipeBuilder();
   renderStatLog();
   renderProgressSummary();
+  renderWeeklyWorkoutSummary();
+  renderPersonalRecords();
   updateDashboard();
 }
 
